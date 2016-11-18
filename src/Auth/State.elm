@@ -9,7 +9,6 @@ port module Auth.State
         , hasPermission
         )
 
-import Log
 import Date exposing (Date)
 import Time
 import Maybe.Extra
@@ -272,7 +271,7 @@ authRequestFromCredentials credentials =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case (Log.debug "auth" msg) of
+    case (Debug.log "auth" msg) of
         AuthApi action' ->
             Auth.Service.update callbacks action' model
 

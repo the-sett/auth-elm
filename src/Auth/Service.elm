@@ -1,9 +1,7 @@
 module Auth.Service exposing (..)
 
-import Log
 import Platform.Cmd exposing (Cmd)
 import Result
-import Http
 import Http
 import Json.Encode as Encode exposing (..)
 import Task exposing (Task)
@@ -56,7 +54,7 @@ callbacks =
 
 update : Callbacks model msg -> Msg -> model -> ( model, Cmd msg )
 update callbacks action model =
-    update' callbacks (Log.debug "account.api" action) model
+    update' callbacks (Debug.log "account.api" action) model
 
 
 update' : Callbacks model msg -> Msg -> model -> ( model, Cmd msg )
