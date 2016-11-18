@@ -7,7 +7,9 @@
         "src"
     ],
     "exposed-modules": [
-        "Auth"
+        "Auth",
+        "Auth.Types",
+        "Auth.State"
     ],
     "native-modules": true,
     "dependencies": {
