@@ -1,5 +1,5 @@
 {
-    "version": "0.0.1",
+    "version": "0.1.0",
     "summary": "Elm Auth State Controller",
     "repository": "https://github.com/rupertlssmith/elm-auth.git",
     "license": "Apache License, version 2.0",
