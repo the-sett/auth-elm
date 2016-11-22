@@ -16,8 +16,10 @@ import Task exposing (andThen)
 import Process
 import Navigation
 import Http
+import Json.Encode as Encode
 import Json.Decode as Decode exposing (Decoder, (:=))
 import Json.Decode.Extra exposing ((|:), withDefault, maybeNull)
+import Elmq
 import Jwt
 import Utils exposing (..)
 import Auth.Types exposing (..)
@@ -76,6 +78,19 @@ tokenDecoder =
         |: ("scopes" := Decode.list Decode.string)
 
 
+credentialsDecoder : Decoder Credentials
+credentialsDecoder =
+    (Decode.succeed
+        (\username password ->
+            { username = username
+            , password = password
+            }
+        )
+    )
+        |: ("username" := Decode.string)
+        |: ("password" := Decode.string)
+
+
 toSavedModel : Model -> SavedModel
 toSavedModel model =
     { token = model.token
@@ -103,6 +118,11 @@ decodeToken maybeToken =
 
         Just token ->
             Result.toMaybe <| Jwt.decodeToken tokenDecoder token
+
+
+decodeCredentials : Encode.Value -> Maybe Credentials
+decodeCredentials val =
+    Decode.decodeValue credentialsDecoder val |> Result.toMaybe
 
 
 refreshTimeFromToken : Maybe Token -> Maybe Date
@@ -143,29 +163,17 @@ hasPermission permission authState =
 
 
 
--- Private interface for authentication functions, and storage of auth state.
+-- Subscriptions to the auth channels.
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ receiveLogin LogIn
-        , receiveLogout (\_ -> LogOut)
-        , receiveRefresh (\_ -> Refresh)
-        , receiveUnauthed (\_ -> NotAuthed)
+        [ Elmq.listen "auth.login" (\value -> LogIn (decodeCredentials value))
+        , Elmq.listenNaked "auth.logout" LogOut
+        , Elmq.listenNaked "auth.refresh" Refresh
+        , Elmq.listenNaked "auth.unauthed" NotAuthed
         ]
-
-
-port receiveLogin : (Credentials -> msg) -> Sub msg
-
-
-port receiveRefresh : (() -> msg) -> Sub msg
-
-
-port receiveLogout : (() -> msg) -> Sub msg
-
-
-port receiveUnauthed : (() -> msg) -> Sub msg
 
 
 
@@ -275,14 +283,19 @@ update msg model =
         AuthApi action' ->
             Auth.Service.update callbacks action' model
 
-        LogIn credentials ->
-            ( { model
-                | token = Nothing
-                , authState = authStateFromToken Nothing
-                , logonAttempted = True
-              }
-            , Auth.Service.invokeLogin AuthApi (authRequestFromCredentials credentials)
-            )
+        LogIn maybeCredentials ->
+            case maybeCredentials of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just credentials ->
+                    ( { model
+                        | token = Nothing
+                        , authState = authStateFromToken Nothing
+                        , logonAttempted = True
+                      }
+                    , Auth.Service.invokeLogin AuthApi (authRequestFromCredentials credentials)
+                    )
 
         Refresh ->
             ( { model | logonAttempted = False }, Auth.Service.invokeRefresh AuthApi )

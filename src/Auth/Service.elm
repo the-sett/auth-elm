@@ -1,7 +1,9 @@
 module Auth.Service exposing (..)
 
+
 import Platform.Cmd exposing (Cmd)
 import Result
+import Http
 import Http
 import Json.Encode as Encode exposing (..)
 import Task exposing (Task)

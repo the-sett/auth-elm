@@ -1,5 +1,9 @@
 module Auth.Types exposing (..)
 
+{-|
+Types for the auth module.
+-}
+
 import Date exposing (Date)
 import Http
 import Result
@@ -15,7 +19,7 @@ type alias Credentials =
 
 type Msg
     = AuthApi (Auth.Service.Msg)
-    | LogIn Credentials
+    | LogIn (Maybe Credentials)
     | Refresh
     | LogOut
     | NotAuthed
