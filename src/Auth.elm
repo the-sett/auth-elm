@@ -1,4 +1,4 @@
-port module Auth
+module Auth
     exposing
         ( login
         , refresh

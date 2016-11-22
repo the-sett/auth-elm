@@ -1,13 +1,22 @@
-port module Auth.State
+port module AuthController
     exposing
         ( update
         , subscriptions
         , init
-        , fromSavedModel
         , isLoggedIn
         , logonAttempted
         , hasPermission
+        , Model
+        , Msg
+        , AuthState
         )
+
+{-|
+Maintains the auth state and follows the TEA pattern to provide a stateful auth
+module that can be linked in to TEA applications.
+@docs update, subscriptions, init, isLoggedIn, logonAttempted, hasPermission
+@docs Model, Msg, AuthState
+-}
 
 import Date exposing (Date)
 import Time
@@ -16,17 +25,73 @@ import Task exposing (andThen)
 import Process
 import Navigation
 import Http
+import Result
 import Json.Encode as Encode
 import Json.Decode as Decode exposing (Decoder, (:=))
 import Json.Decode.Extra exposing ((|:), withDefault, maybeNull)
 import Elmq
 import Jwt
 import Utils exposing (..)
-import Auth.Types exposing (..)
 import Auth.Service
 import Model
 
 
+type alias Credentials =
+    { username : String
+    , password : String
+    }
+
+
+{-| Describes the events this controller responds to.
+-}
+type Msg
+    = AuthApi (Auth.Service.Msg)
+    | LogIn (Maybe Credentials)
+    | Refresh
+    | LogOut
+    | NotAuthed
+    | Refreshed (Result.Result Http.Error Model.AuthResponse)
+
+
+{-| The complete state of this auth module.
+-}
+type alias Model =
+    { token : Maybe String
+    , decodedToken : Maybe Token
+    , refreshFrom : Maybe Date
+    , errorMsg : String
+    , authState : AuthState
+    , forwardLocation : String
+    , logoutLocation : String
+    , logonAttempted : Bool
+    }
+
+
+{-| A sub-section of the auth module state describing whether or not the user
+is logged in, what permissions they have, and when their auth token will expire.
+This is the part of the auth state that consumers of this module are interested
+in.
+-}
+type alias AuthState =
+    { loggedIn : Bool
+    , permissions : List String
+    , expiresAt : Maybe Date
+    }
+
+
+type alias Token =
+    { sub : String
+    , iss : Maybe String
+    , aud : Maybe String
+    , exp : Maybe Date
+    , iat : Maybe Date
+    , jti : Maybe String
+    , scopes : List String
+    }
+
+
+{-| The initial unauthed state.
+-}
 init : Model
 init =
     { token = Nothing
@@ -38,6 +103,10 @@ init =
     , logoutLocation = ""
     , logonAttempted = False
     }
+
+
+
+{--Helper functions over the auth model. --}
 
 
 notAuthedState =
@@ -91,25 +160,6 @@ credentialsDecoder =
         |: ("password" := Decode.string)
 
 
-toSavedModel : Model -> SavedModel
-toSavedModel model =
-    { token = model.token
-    }
-
-
-fromSavedModel : SavedModel -> Model -> Model
-fromSavedModel saved model =
-    let
-        decodedToken =
-            decodeToken saved.token
-    in
-        { model
-            | token = saved.token
-            , decodedToken = decodedToken
-            , authState = authStateFromToken decodedToken
-        }
-
-
 decodeToken : Maybe String -> Maybe Token
 decodeToken maybeToken =
     case maybeToken of
@@ -147,16 +197,22 @@ authStateFromToken maybeToken =
             }
 
 
+{-| Determines whether the user is currently logged in.
+-}
 isLoggedIn : AuthState -> Bool
 isLoggedIn authState =
     authState.loggedIn
 
 
+{-| Reports whether a logon has been attempted.
+-}
 logonAttempted : Model -> Bool
 logonAttempted model =
     model.logonAttempted
 
 
+{-| Checks if the user currently holds a named permission.
+-}
 hasPermission : String -> AuthState -> Bool
 hasPermission permission authState =
     List.member permission authState.permissions
@@ -166,6 +222,9 @@ hasPermission permission authState =
 -- Subscriptions to the auth channels.
 
 
+{-| Creates the needed subscriptions to auth events that can be triggered from
+the Auth module.
+-}
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
@@ -277,6 +336,9 @@ authRequestFromCredentials credentials =
 -- Event handler.
 
 
+{-| Updates the auth state and triggers events needed to communicate with the
+auth server.
+-}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case (Debug.log "auth" msg) of

@@ -8,8 +8,7 @@
     ],
     "exposed-modules": [
         "Auth",
-        "Auth.Types",
-        "Auth.State"
+        "AuthController"
     ],
     "native-modules": true,
     "dependencies": {
