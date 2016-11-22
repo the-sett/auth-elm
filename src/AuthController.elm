@@ -1,4 +1,4 @@
-port module AuthController
+module AuthController
     exposing
         ( update
         , subscriptions
