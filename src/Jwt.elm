@@ -3,7 +3,7 @@ module Jwt exposing (JwtError(..), decodeToken, isExpired)
 import Base64
 import String
 import Time exposing (Time)
-import Json.Decode as Json exposing ((:=), Value)
+import Json.Decode as Json exposing (field, Value)
 
 
 type JwtError
@@ -44,7 +44,7 @@ decodeToken dec s =
 
 isExpired : Time -> String -> Bool
 isExpired now token =
-    case decodeToken ("exp" := Json.float) token of
+    case decodeToken (field "exp" Json.float) token of
         Result.Ok exp ->
             now > (exp * 1000)
 

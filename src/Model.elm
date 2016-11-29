@@ -3,7 +3,7 @@ module Model exposing(..)
 import Set exposing (Set)
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (..)
-import Json.Decode.Extra exposing ((|:), withDefault, maybeNull)
+import Json.Decode.Extra exposing ((|:), withDefault)
 import Json.Encode as Encode exposing (..)
 import Exts.Maybe exposing (catMaybes)
 type NamedRef =
@@ -32,7 +32,7 @@ namedRefDecoder =
                 }
         )
     )
-        |: Decode.maybe ("name" := Decode.string)
+        |: Decode.maybe (field "name" Decode.string)
 
 
 type AuthRequest =
@@ -64,8 +64,8 @@ authRequestDecoder =
                 }
         )
     )
-        |: Decode.maybe ("username" := Decode.string)
-        |: Decode.maybe ("password" := Decode.string)
+        |: Decode.maybe (field "username" Decode.string)
+        |: Decode.maybe (field "password" Decode.string)
 
 
 type RefreshRequest =
@@ -94,7 +94,7 @@ refreshRequestDecoder =
                 }
         )
     )
-        |: Decode.maybe ("refreshToken" := Decode.string)
+        |: Decode.maybe (field "refreshToken" Decode.string)
 
 
 type AuthResponse =
@@ -126,8 +126,8 @@ authResponseDecoder =
                 }
         )
     )
-        |: Decode.maybe ("token" := Decode.string)
-        |: Decode.maybe ("refreshToken" := Decode.string)
+        |: Decode.maybe (field "token" Decode.string)
+        |: Decode.maybe (field "refreshToken" Decode.string)
 
 
 type Account =
@@ -171,12 +171,12 @@ accountDecoder =
                 }
         )
     )
-        |: Decode.maybe ("username" := Decode.string)
-        |: Decode.maybe ("password" := Decode.string)
-        |: Decode.maybe ("salt" := Decode.string)
-        |: Decode.maybe ("root" := Decode.bool)
-        |: (("roles" := maybeNull (Decode.list roleDecoder)) |> withDefault Nothing)
-        |: Decode.maybe ("id" := Decode.int |> Decode.map toString)
+        |: Decode.maybe (field "username" Decode.string)
+        |: Decode.maybe (field "password" Decode.string)
+        |: Decode.maybe (field "salt" Decode.string)
+        |: Decode.maybe (field "root" Decode.bool)
+        |: ((field "roles" (Decode.maybe (Decode.list roleDecoder))) |> withDefault Nothing)
+        |: Decode.maybe (field "id" Decode.int |> Decode.map toString)
 
 
 type Role =
@@ -211,9 +211,9 @@ roleDecoder =
                 }
         )
     )
-        |: Decode.maybe ("name" := Decode.string)
-        |: (("permissions" := maybeNull (Decode.list permissionDecoder)) |> withDefault Nothing)
-        |: Decode.maybe ("id" := Decode.int |> Decode.map toString)
+        |: Decode.maybe (field "name" Decode.string)
+        |: ((field "permissions" (Decode.maybe (Decode.list permissionDecoder))) |> withDefault Nothing)
+        |: Decode.maybe (field "id" Decode.int |> Decode.map toString)
 
 
 type Permission =
@@ -245,7 +245,7 @@ permissionDecoder =
                 }
         )
     )
-        |: Decode.maybe ("name" := Decode.string)
-        |: Decode.maybe ("id" := Decode.int |> Decode.map toString)
+        |: Decode.maybe (field "name" Decode.string)
+        |: Decode.maybe (field "id" Decode.int |> Decode.map toString)
 
 

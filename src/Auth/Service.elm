@@ -1,6 +1,5 @@
 module Auth.Service exposing (..)
 
-
 import Platform.Cmd exposing (Cmd)
 import Result
 import Http
@@ -56,12 +55,7 @@ callbacks =
 
 update : Callbacks model msg -> Msg -> model -> ( model, Cmd msg )
 update callbacks action model =
-    update' callbacks (Debug.log "account.api" action) model
-
-
-update' : Callbacks model msg -> Msg -> model -> ( model, Cmd msg )
-update' callbacks action model =
-    case action of
+    case (Debug.log "account.api" action) of
         Login result ->
             (case result of
                 Ok response ->
