@@ -30,8 +30,13 @@ checkAll checks model =
 error : Http.Error -> model -> ( model, Cmd msg )
 error httpError model =
     case httpError of
-        Http.BadResponse 401 message ->
-            ( model, Auth.unauthed )
+        Http.BadStatus response ->
+            if (response.status.code == 401) then
+                ( model, Auth.unauthed )
+            else if (response.status.code == 403) then
+                ( model, Auth.unauthed )
+            else
+                ( model, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
