@@ -27,8 +27,8 @@ import Navigation
 import Http
 import Result
 import Json.Encode as Encode
-import Json.Decode as Decode exposing (Decoder, (:=))
-import Json.Decode.Extra exposing ((|:), withDefault, maybeNull)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Extra exposing ((|:), withDefault)
 import Elmq
 import Jwt
 import Utils exposing (..)
@@ -130,21 +130,21 @@ tokenDecoder =
             }
         )
     )
-        |: ("sub" := Decode.string)
-        |: Decode.maybe ("iss" := Decode.string)
-        |: Decode.maybe ("aud" := Decode.string)
+        |: (Decode.field "sub" Decode.string)
+        |: Decode.maybe (Decode.field "iss" Decode.string)
+        |: Decode.maybe (Decode.field "aud" Decode.string)
         |: Decode.maybe
             (Decode.map
                 (Date.fromTime << toFloat << ((*) 1000))
-                ("exp" := Decode.int)
+                (Decode.field "exp" Decode.int)
             )
         |: Decode.maybe
             (Decode.map
                 (Date.fromTime << toFloat << ((*) 1000))
-                ("iat" := Decode.int)
+                (Decode.field "iat" Decode.int)
             )
-        |: Decode.maybe ("jti" := Decode.string)
-        |: ("scopes" := Decode.list Decode.string)
+        |: Decode.maybe (Decode.field "jti" Decode.string)
+        |: (Decode.field "scopes" (Decode.list Decode.string))
 
 
 credentialsDecoder : Decoder Credentials
@@ -156,8 +156,8 @@ credentialsDecoder =
             }
         )
     )
-        |: ("username" := Decode.string)
-        |: ("password" := Decode.string)
+        |: (Decode.field "username" Decode.string)
+        |: (Decode.field "password" Decode.string)
 
 
 decodeToken : Maybe String -> Maybe Token
@@ -254,7 +254,7 @@ login (Model.AuthResponse response) model =
         decodedToken =
             decodeToken response.token
 
-        model' =
+        model_ =
             { model
                 | token = response.token
                 , refreshFrom = refreshTimeFromToken decodedToken
@@ -262,10 +262,10 @@ login (Model.AuthResponse response) model =
                 , authState = authStateFromToken decodedToken
             }
     in
-        ( model'
+        ( model_
         , Cmd.batch
             [ Navigation.newUrl model.forwardLocation
-            , delayedRefreshCmd model'
+            , delayedRefreshCmd model_
             ]
         )
 
@@ -276,7 +276,7 @@ refresh (Model.AuthResponse response) model =
         decodedToken =
             decodeToken response.token
 
-        model' =
+        model_ =
             { model
                 | token = response.token
                 , refreshFrom = refreshTimeFromToken decodedToken
@@ -284,15 +284,15 @@ refresh (Model.AuthResponse response) model =
                 , authState = authStateFromToken decodedToken
             }
     in
-        ( model'
+        ( model_
         , Cmd.batch
-            [ delayedRefreshCmd model'
+            [ delayedRefreshCmd model_
             ]
         )
 
 
-logout : Http.Response -> Model -> ( Model, Cmd Msg )
-logout response model =
+logout : Model -> ( Model, Cmd Msg )
+logout model =
     ( { model | token = Nothing, authState = authStateFromToken Nothing }
     , Cmd.batch [ Navigation.newUrl model.logoutLocation ]
     )
@@ -320,8 +320,8 @@ tokenExpiryTask refreshDate =
             max 0 ((Date.toTime refreshDate) - now)
     in
         Time.now
-            `andThen` (\now -> Process.sleep <| delay refreshDate now)
-            `andThen` (\_ -> Auth.Service.refreshTask)
+            |> andThen (\now -> Process.sleep <| delay refreshDate now)
+            |> andThen (\_ -> Auth.Service.refreshTask)
 
 
 authRequestFromCredentials : Credentials -> Model.AuthRequest
@@ -342,8 +342,8 @@ auth server.
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case (Debug.log "auth" msg) of
-        AuthApi action' ->
-            Auth.Service.update callbacks action' model
+        AuthApi action_ ->
+            Auth.Service.update callbacks action_ model
 
         LogIn maybeCredentials ->
             case maybeCredentials of

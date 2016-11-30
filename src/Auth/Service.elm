@@ -3,7 +3,6 @@ module Auth.Service exposing (..)
 import Platform.Cmd exposing (Cmd)
 import Result
 import Http
-import Http
 import Json.Encode as Encode exposing (..)
 import Task exposing (Task)
 import Model exposing (..)
@@ -12,34 +11,31 @@ import Model exposing (..)
 type Msg
     = Login (Result.Result Http.Error Model.AuthResponse)
     | Refresh (Result.Result Http.Error Model.AuthResponse)
-    | Logout (Result.Result Http.Error Http.Response)
+    | Logout (Result.Result Http.Error ())
 
 
 invokeLogin : (Msg -> msg) -> Model.AuthRequest -> Cmd msg
 invokeLogin msg request =
-    loginTask request
-        |> Task.perform (\error -> Login (Result.Err error)) (\result -> Login (Result.Ok result))
+    loginTask Login request
         |> Cmd.map msg
 
 
 invokeRefresh : (Msg -> msg) -> Cmd msg
 invokeRefresh msg =
-    refreshTask
-        |> Task.perform (\error -> Refresh (Result.Err error)) (\result -> Refresh (Result.Ok result))
+    refreshTask Refresh
         |> Cmd.map msg
 
 
 invokeLogout : (Msg -> msg) -> Cmd msg
 invokeLogout msg =
-    logoutTask
-        |> Task.perform (\error -> Logout (Result.Err error)) (\result -> Logout (Result.Ok result))
+    logoutTask Logout
         |> Cmd.map msg
 
 
 type alias Callbacks model msg =
     { login : Model.AuthResponse -> model -> ( model, Cmd msg )
     , refresh : Model.AuthResponse -> model -> ( model, Cmd msg )
-    , logout : Http.Response -> model -> ( model, Cmd msg )
+    , logout : model -> ( model, Cmd msg )
     , error : Http.Error -> model -> ( model, Cmd msg )
     }
 
@@ -48,7 +44,7 @@ callbacks : Callbacks model msg
 callbacks =
     { login = \_ -> \model -> ( model, Cmd.none )
     , refresh = \_ -> \model -> ( model, Cmd.none )
-    , logout = \_ -> \model -> ( model, Cmd.none )
+    , logout = \model -> ( model, Cmd.none )
     , error = \_ -> \model -> ( model, Cmd.none )
     }
 
@@ -76,8 +72,8 @@ update callbacks action model =
 
         Logout result ->
             (case result of
-                Ok status ->
-                    callbacks.logout status model
+                Ok _ ->
+                    callbacks.logout model
 
                 Err httpError ->
                     callbacks.error httpError model
@@ -95,44 +91,48 @@ routes =
     }
 
 
-loginTask : AuthRequest -> Task Http.Error Model.AuthResponse
-loginTask model =
-    { verb = "POST"
-    , headers = [ ( "Content-Type", "application/json" ) ]
-    , url = routes.loginUrl
-    , body = Http.string <| Encode.encode 0 <| authRequestEncoder model
-    }
-        |> Http.send Http.defaultSettings
-        |> Http.fromJson authResponseDecoder
+loginTask :
+    (Result Http.Error Model.AuthResponse -> msg)
+    -> AuthRequest
+    -> Cmd msg
+loginTask tagger model =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = routes.loginUrl
+        , body = Http.jsonBody <| authRequestEncoder model
+        , expect = Http.expectJson authResponseDecoder
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send tagger
 
 
-refreshTask : Task Http.Error Model.AuthResponse
-refreshTask =
-    { verb = "GET"
-    , headers = []
-    , url = routes.refreshUrl
-    , body = Http.empty
-    }
-        |> Http.send Http.defaultSettings
-        |> Http.fromJson authResponseDecoder
+refreshTask :
+    (Result Http.Error Model.AuthResponse -> msg)
+    -> Cmd msg
+refreshTask tagger =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = routes.refreshUrl
+        , body = Http.emptyBody
+        , expect = Http.expectJson authResponseDecoder
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send tagger
 
 
-logoutTask : Task Http.Error Http.Response
-logoutTask =
-    { verb = "POST"
-    , headers = []
-    , url = routes.logoutUrl
-    , body = Http.empty
-    }
-        |> Http.send Http.defaultSettings
-        |> Task.mapError promoteError
-
-
-promoteError : Http.RawError -> Http.Error
-promoteError rawError =
-    case rawError of
-        Http.RawTimeout ->
-            Http.Timeout
-
-        Http.RawNetworkError ->
-            Http.NetworkError
+logoutTask : (Result Http.Error () -> msg) -> Cmd msg
+logoutTask tagger =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = routes.logoutUrl
+        , body = Http.emptyBody
+        , expect = Http.expectStringResponse (\_ -> Ok ())
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send tagger
