@@ -16,19 +16,22 @@ type Msg
 
 invokeLogin : (Msg -> msg) -> Model.AuthRequest -> Cmd msg
 invokeLogin msg request =
-    loginTask Login request
+    loginTask request
+        |> Http.send Login
         |> Cmd.map msg
 
 
 invokeRefresh : (Msg -> msg) -> Cmd msg
 invokeRefresh msg =
-    refreshTask Refresh
+    refreshTask
+        |> Http.send Refresh
         |> Cmd.map msg
 
 
 invokeLogout : (Msg -> msg) -> Cmd msg
 invokeLogout msg =
-    logoutTask Logout
+    logoutTask
+        |> Http.send Logout
         |> Cmd.map msg
 
 
@@ -91,11 +94,8 @@ routes =
     }
 
 
-loginTask :
-    (Result Http.Error Model.AuthResponse -> msg)
-    -> AuthRequest
-    -> Cmd msg
-loginTask tagger model =
+loginTask : AuthRequest -> Http.Request AuthResponse
+loginTask model =
     Http.request
         { method = "POST"
         , headers = []
@@ -105,13 +105,10 @@ loginTask tagger model =
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send tagger
 
 
-refreshTask :
-    (Result Http.Error Model.AuthResponse -> msg)
-    -> Cmd msg
-refreshTask tagger =
+refreshTask : Http.Request AuthResponse
+refreshTask =
     Http.request
         { method = "GET"
         , headers = []
@@ -121,11 +118,10 @@ refreshTask tagger =
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send tagger
 
 
-logoutTask : (Result Http.Error () -> msg) -> Cmd msg
-logoutTask tagger =
+logoutTask : Http.Request ()
+logoutTask =
     Http.request
         { method = "POST"
         , headers = []
@@ -135,4 +131,3 @@ logoutTask tagger =
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send tagger

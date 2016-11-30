@@ -310,7 +310,7 @@ delayedRefreshCmd model =
 
         Just refreshDate ->
             tokenExpiryTask refreshDate
-                |> Task.perform (\error -> Refreshed (Result.Err error)) (\result -> Refreshed (Result.Ok result))
+                |> Task.attempt (\result -> Refreshed result)
 
 
 tokenExpiryTask : Date -> Task.Task Http.Error Model.AuthResponse
@@ -321,7 +321,7 @@ tokenExpiryTask refreshDate =
     in
         Time.now
             |> andThen (\now -> Process.sleep <| delay refreshDate now)
-            |> andThen (\_ -> Auth.Service.refreshTask)
+            |> andThen (\_ -> Http.toTask Auth.Service.refreshTask)
 
 
 authRequestFromCredentials : Credentials -> Model.AuthRequest
