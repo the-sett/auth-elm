@@ -45,7 +45,7 @@ type alias Credentials =
 {-| Describes the events this controller responds to.
 -}
 type Msg
-    = AuthApi (Auth.Service.Msg)
+    = AuthApi Auth.Service.Msg
     | LogIn (Maybe Credentials)
     | Refresh
     | LogOut
@@ -76,6 +76,7 @@ type alias AuthState =
     { loggedIn : Bool
     , permissions : List String
     , expiresAt : Maybe Date
+    , username : String
     }
 
 
@@ -113,6 +114,7 @@ notAuthedState =
     { loggedIn = False
     , permissions = []
     , expiresAt = Nothing
+    , username = ""
     }
 
 
@@ -194,6 +196,7 @@ authStateFromToken maybeToken =
             { loggedIn = True
             , permissions = token.scopes
             , expiresAt = token.exp
+            , username = token.sub
             }
 
 
