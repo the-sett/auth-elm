@@ -1,5 +1,5 @@
 {
-    "version": "1.2.0",
+    "version": "1.0.0",
     "summary": "Elm auth module for interacting with the-sett/auth-service.",
     "repository": "https://github.com/the-sett/auth-elm.git",
     "license": "Apache License, version 2.0",
@@ -11,13 +11,13 @@
         "AuthController"
     ],
     "dependencies": {
-      "elm-lang/core": "5.0.0 <= v < 6.0.0",
-      "elm-lang/navigation": "2.0.1 <= v < 3.0.0",
-      "elm-lang/http": "1.0.0 <= v < 2.0.0",
-      "elm-community/json-extra": "2.0.0 <= v < 3.0.0",
-      "elm-community/maybe-extra": "3.0.0 <= v < 4.0.0",
-      "krisajenkins/elm-exts": "26.1.0 <= v < 27.0.0",
-      "truqu/elm-base64": "1.0.5 <= v < 2.0.0"
+        "elm-community/json-extra": "2.0.0 <= v < 3.0.0",
+        "elm-community/maybe-extra": "3.0.0 <= v < 4.0.0",
+        "elm-lang/core": "5.0.0 <= v < 6.0.0",
+        "elm-lang/http": "1.0.0 <= v < 2.0.0",
+        "elm-lang/navigation": "2.0.1 <= v < 3.0.0",
+        "krisajenkins/elm-exts": "26.1.0 <= v < 27.0.0",
+        "truqu/elm-base64": "1.0.5 <= v < 2.0.0"
     },
     "elm-version": "0.18.0 <= v < 0.19.0"
 }
