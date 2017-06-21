@@ -47,38 +47,44 @@ type Msg
 
 {-| The complete state of this auth module.
 -}
-type alias Model =
-    { token : Maybe String
-    , decodedToken : Maybe Token
-    , refreshFrom : Maybe Date
-    , errorMsg : String
-    , authState : AuthState
-    , forwardLocation : String
-    , logoutLocation : String
-    , logonAttempted : Bool
-    }
+type Model
+    = Model
+        { token : Maybe String
+        , decodedToken : Maybe Token
+        , refreshFrom : Maybe Date
+        , errorMsg : String
+        , authState : AuthState
+        , forwardLocation : String
+        , logoutLocation : String
+        , logonAttempted : Bool
+        }
 
 
 {-| The initial unauthed state.
 -}
-init : String -> String -> Model
-init forwardLocation logoutLocation =
-    { token = Nothing
-    , decodedToken = Nothing
-    , refreshFrom = Nothing
-    , errorMsg = ""
-    , authState = notAuthedState
-    , forwardLocation = forwardLocation
-    , logoutLocation = logoutLocation
-    , logonAttempted = False
+init :
+    { forwardLocation : String
+    , logoutLocation : String
     }
+    -> Model
+init config =
+    Model
+        { token = Nothing
+        , decodedToken = Nothing
+        , refreshFrom = Nothing
+        , errorMsg = ""
+        , authState = notAuthedState
+        , forwardLocation = config.forwardLocation
+        , logoutLocation = config.logoutLocation
+        , logonAttempted = False
+        }
 
 
 {-|
 Extracts the publicly visible auth state from the model.
 -}
-extractAuthState : Model -> AuthState
-extractAuthState model =
+extractAuthState : Model -> Auth.AuthState
+extractAuthState (Model model) =
     model.authState
 
 
@@ -192,7 +198,7 @@ authStateFromToken maybeToken =
 {-| Reports whether a logon has been attempted.
 -}
 logonAttempted : Model -> Bool
-logonAttempted model =
+logonAttempted (Model model) =
     model.logonAttempted
 
 
@@ -210,18 +216,19 @@ callbacks =
 
 
 login : Model.AuthResponse -> Model -> ( Model, Cmd Msg )
-login (Model.AuthResponse response) model =
+login (Model.AuthResponse response) (Model model) =
     let
         decodedToken =
             decodeToken response.token
 
         model_ =
-            { model
-                | token = response.token
-                , refreshFrom = refreshTimeFromToken decodedToken
-                , decodedToken = decodedToken
-                , authState = authStateFromToken decodedToken
-            }
+            Model
+                { model
+                    | token = response.token
+                    , refreshFrom = refreshTimeFromToken decodedToken
+                    , decodedToken = decodedToken
+                    , authState = authStateFromToken decodedToken
+                }
     in
         ( model_
         , Cmd.batch
@@ -232,18 +239,19 @@ login (Model.AuthResponse response) model =
 
 
 refresh : Model.AuthResponse -> Model -> ( Model, Cmd Msg )
-refresh (Model.AuthResponse response) model =
+refresh (Model.AuthResponse response) (Model model) =
     let
         decodedToken =
             decodeToken response.token
 
         model_ =
-            { model
-                | token = response.token
-                , refreshFrom = refreshTimeFromToken decodedToken
-                , decodedToken = decodedToken
-                , authState = authStateFromToken decodedToken
-            }
+            Model
+                { model
+                    | token = response.token
+                    , refreshFrom = refreshTimeFromToken decodedToken
+                    , decodedToken = decodedToken
+                    , authState = authStateFromToken decodedToken
+                }
     in
         ( model_
         , Cmd.batch
@@ -253,8 +261,8 @@ refresh (Model.AuthResponse response) model =
 
 
 logout : Model -> ( Model, Cmd Msg )
-logout model =
-    ( { model | token = Nothing, authState = authStateFromToken Nothing }
+logout (Model model) =
+    ( Model { model | token = Nothing, authState = authStateFromToken Nothing }
     , Cmd.batch [ Navigation.newUrl model.logoutLocation ]
     )
 
@@ -264,7 +272,7 @@ logout model =
 
 
 delayedRefreshCmd : Model -> Cmd Msg
-delayedRefreshCmd model =
+delayedRefreshCmd (Model model) =
     case model.refreshFrom of
         Nothing ->
             Cmd.none
@@ -301,50 +309,52 @@ authRequestFromCredentials credentials =
 auth server.
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg (Model model) =
     case (Debug.log "auth" msg) of
         AuthApi action_ ->
-            Auth.Service.update callbacks action_ model
+            Auth.Service.update callbacks action_ (Model model)
 
         LogIn maybeCredentials ->
             case maybeCredentials of
                 Nothing ->
-                    ( model, Cmd.none )
+                    ( Model model, Cmd.none )
 
                 Just credentials ->
-                    ( { model
-                        | token = Nothing
-                        , authState = authStateFromToken Nothing
-                        , logonAttempted = True
-                      }
+                    ( Model
+                        { model
+                            | token = Nothing
+                            , authState = authStateFromToken Nothing
+                            , logonAttempted = True
+                        }
                     , Auth.Service.invokeLogin AuthApi (authRequestFromCredentials credentials)
                     )
 
         Refresh ->
-            ( { model | logonAttempted = False }, Auth.Service.invokeRefresh AuthApi )
+            ( Model { model | logonAttempted = False }, Auth.Service.invokeRefresh AuthApi )
 
         LogOut ->
-            ( { model | logonAttempted = False }, Auth.Service.invokeLogout AuthApi )
+            ( Model { model | logonAttempted = False }, Auth.Service.invokeLogout AuthApi )
 
         NotAuthed ->
-            ( { model
-                | token = Nothing
-                , authState = authStateFromToken Nothing
-                , logonAttempted = False
-              }
+            ( Model
+                { model
+                    | token = Nothing
+                    , authState = authStateFromToken Nothing
+                    , logonAttempted = False
+                }
             , Cmd.batch [ Navigation.newUrl model.logoutLocation ]
             )
 
         Refreshed result ->
             case result of
                 Err _ ->
-                    ( model, Cmd.none )
+                    ( Model model, Cmd.none )
 
                 Ok authResponse ->
                     if isLoggedIn model.authState then
-                        refresh authResponse model
+                        refresh authResponse (Model model)
                     else
-                        ( model, Cmd.none )
+                        ( Model model, Cmd.none )
 
 
 {-|
