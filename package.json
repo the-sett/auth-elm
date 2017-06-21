@@ -1,0 +1,13 @@
+{
+    "version": "1.0.0-SNAPSHOT",
+    "name": "auth_web_ui",
+    "description": "UI for authentication server.",
+    "devDependencies": {
+        "grunt": "~0.4.5",
+        "grunt-cli": "~0.1.13",
+        "grunt-contrib-clean": "~0.5.0",
+        "grunt-contrib-watch": "~0.6.1",
+        "grunt-elm": "~1.4.0",
+        "grunt-exec": "~0.4.6"
+    }
+}
