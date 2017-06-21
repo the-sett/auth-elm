@@ -25,24 +25,19 @@ checkAll checks model =
    A defalt HTTP error handler that maps:
    401 UNAUTHED -> Auth.unauthed
 -}
-
-
-error : Http.Error -> model -> ( model, Cmd msg )
-error httpError model =
-    case httpError of
-        Http.BadStatus response ->
-            if (response.status.code == 401) then
-                ( model, Auth.unauthed )
-            else if (response.status.code == 403) then
-                ( model, Auth.unauthed )
-            else
-                ( model, Cmd.none )
-
-        _ ->
-            ( model, Cmd.none )
-
-
-
+-- error : Http.Error -> model -> ( model, Cmd msg )
+-- error httpError model =
+--     case httpError of
+--         Http.BadStatus response ->
+--             if (response.status.code == 401) then
+--                 ( model, Auth.unauthed )
+--             else if (response.status.code == 403) then
+--                 ( model, Auth.unauthed )
+--             else
+--                 ( model, Cmd.none )
+--
+--         _ ->
+--             ( model, Cmd.none )
 {-
    Finds the nth element of a list.
 -}

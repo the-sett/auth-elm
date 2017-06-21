@@ -1,21 +1,19 @@
 module AuthController
     exposing
-        ( update
-        , subscriptions
-        , init
-        , isLoggedIn
-        , logonAttempted
-        , hasPermission
-        , Model
+        ( Model
         , Msg
-        , AuthState
+        , init
+        , logonAttempted
+        , update
+        , updateFromAuthCmd
+        , extractAuthState
         )
 
 {-|
 Maintains the auth state and follows the TEA pattern to provide a stateful auth
-module that can be linked in to TEA applications.
-@docs update, subscriptions, init, isLoggedIn, logonAttempted, hasPermission
-@docs Model, Msg, AuthState
+module that can be wired in to TEA applications update cycles.
+@docs Model, Msg
+@docs init, logonAttempted, update, updateFromAuthCmd, extractAuthState
 -}
 
 import Date exposing (Date)
@@ -29,17 +27,11 @@ import Result
 import Json.Encode as Encode
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Extra exposing ((|:), withDefault)
-import Elmq
 import Jwt
-import Utils exposing (..)
 import Auth.Service
 import Model
-
-
-type alias Credentials =
-    { username : String
-    , password : String
-    }
+import Auth exposing (Credentials, isLoggedIn)
+import Internal exposing (AuthCmd, AuthState)
 
 
 {-| Describes the events this controller responds to.
@@ -67,19 +59,31 @@ type alias Model =
     }
 
 
-{-| A sub-section of the auth module state describing whether or not the user
-is logged in, what permissions they have, and when their auth token will expire.
-This is the part of the auth state that consumers of this module are interested
-in.
+{-| The initial unauthed state.
 -}
-type alias AuthState =
-    { loggedIn : Bool
-    , permissions : List String
-    , expiresAt : Maybe Date
-    , username : String
+init : String -> String -> Model
+init forwardLocation logoutLocation =
+    { token = Nothing
+    , decodedToken = Nothing
+    , refreshFrom = Nothing
+    , errorMsg = ""
+    , authState = notAuthedState
+    , forwardLocation = forwardLocation
+    , logoutLocation = logoutLocation
+    , logonAttempted = False
     }
 
 
+{-|
+Extracts the publicly visible auth state from the model.
+-}
+extractAuthState : Model -> AuthState
+extractAuthState model =
+    model.authState
+
+
+{-| Describes the fields of a decoded JWT token.
+-}
 type alias Token =
     { sub : String
     , iss : Maybe String
@@ -88,21 +92,6 @@ type alias Token =
     , iat : Maybe Date
     , jti : Maybe String
     , scopes : List String
-    }
-
-
-{-| The initial unauthed state.
--}
-init : Model
-init =
-    { token = Nothing
-    , decodedToken = Nothing
-    , refreshFrom = Nothing
-    , errorMsg = ""
-    , authState = notAuthedState
-    , forwardLocation = ""
-    , logoutLocation = ""
-    , logonAttempted = False
     }
 
 
@@ -200,42 +189,11 @@ authStateFromToken maybeToken =
             }
 
 
-{-| Determines whether the user is currently logged in.
--}
-isLoggedIn : AuthState -> Bool
-isLoggedIn authState =
-    authState.loggedIn
-
-
 {-| Reports whether a logon has been attempted.
 -}
 logonAttempted : Model -> Bool
 logonAttempted model =
     model.logonAttempted
-
-
-{-| Checks if the user currently holds a named permission.
--}
-hasPermission : String -> AuthState -> Bool
-hasPermission permission authState =
-    List.member permission authState.permissions
-
-
-
--- Subscriptions to the auth channels.
-
-
-{-| Creates the needed subscriptions to auth events that can be triggered from
-the Auth module.
--}
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.batch
-        [ Elmq.listen "auth.login" (\value -> LogIn (decodeCredentials value))
-        , Elmq.listenNaked "auth.logout" LogOut
-        , Elmq.listenNaked "auth.refresh" Refresh
-        , Elmq.listenNaked "auth.unauthed" NotAuthed
-        ]
 
 
 
@@ -387,3 +345,23 @@ update msg model =
                         refresh authResponse model
                     else
                         ( model, Cmd.none )
+
+
+{-|
+Processes an AuthCmd representing a side effect request to perform some auth action
+and to update the state.
+-}
+updateFromAuthCmd : AuthCmd -> Model -> ( Model, Cmd Msg )
+updateFromAuthCmd authCmd =
+    case authCmd of
+        Internal.Login credentials ->
+            credentials |> Just |> LogIn |> update
+
+        Internal.Refresh ->
+            update Refresh
+
+        Internal.Logout ->
+            update LogOut
+
+        Internal.Unauthed ->
+            update NotAuthed
