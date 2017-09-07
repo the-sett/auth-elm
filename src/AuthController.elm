@@ -6,13 +6,14 @@ module AuthController
         , logonAttempted
         , update
         , updateFromAuthCmd
+        , updateForwardLocation
         , extractAuthState
         )
 
 {-| Maintains the auth state and follows the TEA pattern to provide a stateful auth
 module that can be wired in to TEA applications update cycles.
 @docs Model, Msg
-@docs init, logonAttempted, update, updateFromAuthCmd, extractAuthState
+@docs init, logonAttempted, update, updateFromAuthCmd, extractAuthState, updateForwardLocation
 -}
 
 import Date exposing (Date)
@@ -377,3 +378,10 @@ updateFromAuthCmd authCmd =
 
         Internal.Unauthed ->
             update NotAuthed
+
+
+{-| Updates the forward location.
+-}
+updateForwardLocation : String -> Model -> Model
+updateForwardLocation location (Model model) =
+    Model { model | forwardLocation = location }
