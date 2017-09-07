@@ -22,7 +22,7 @@ module.exports = function(grunt) {
         'watch': {
             'dev': {
                 files: ['Gruntfile.js', 'elm-package.json', 'src/**'],
-                tasks: ['build'],
+                tasks: ['loop'],
                 options: {
                     atBegin: true
                 }
@@ -37,5 +37,6 @@ module.exports = function(grunt) {
     });
 
     grunt.registerTask('dev', ['build', 'watch:dev']);
-    grunt.registerTask('build', ['exec:elm-install', 'elm']);
+    grunt.registerTask('build', ['exec:elm-install', 'loop']);
+    grunt.registerTask('loop', ['elm']);    
 };
