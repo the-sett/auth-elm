@@ -14,23 +14,23 @@ type Msg
     | Logout (Result.Result Http.Error ())
 
 
-invokeLogin : (Msg -> msg) -> Model.AuthRequest -> Cmd msg
-invokeLogin msg request =
-    loginTask request
+invokeLogin : String -> (Msg -> msg) -> Model.AuthRequest -> Cmd msg
+invokeLogin root msg request =
+    loginTask root request
         |> Http.send Login
         |> Cmd.map msg
 
 
-invokeRefresh : (Msg -> msg) -> Cmd msg
-invokeRefresh msg =
-    refreshTask
+invokeRefresh : String -> (Msg -> msg) -> Cmd msg
+invokeRefresh root msg =
+    refreshTask root
         |> Http.send Refresh
         |> Cmd.map msg
 
 
-invokeLogout : (Msg -> msg) -> Cmd msg
-invokeLogout msg =
-    logoutTask
+invokeLogout : String -> (Msg -> msg) -> Cmd msg
+invokeLogout root msg =
+    logoutTask root
         |> Http.send Logout
         |> Cmd.map msg
 
@@ -83,23 +83,19 @@ update callbacks action model =
             )
 
 
-api =
-    "/auth/"
-
-
-routes =
-    { loginUrl = api ++ "login"
-    , logoutUrl = api ++ "logout"
-    , refreshUrl = api ++ "refresh"
+routes root =
+    { loginUrl = root ++ "login"
+    , logoutUrl = root ++ "logout"
+    , refreshUrl = root ++ "refresh"
     }
 
 
-loginTask : AuthRequest -> Http.Request AuthResponse
-loginTask model =
+loginTask : String -> AuthRequest -> Http.Request AuthResponse
+loginTask root model =
     Http.request
         { method = "POST"
         , headers = []
-        , url = routes.loginUrl
+        , url = routes root |> .loginUrl
         , body = Http.jsonBody <| authRequestEncoder model
         , expect = Http.expectJson authResponseDecoder
         , timeout = Nothing
@@ -107,12 +103,12 @@ loginTask model =
         }
 
 
-refreshTask : Http.Request AuthResponse
-refreshTask =
+refreshTask : String -> Http.Request AuthResponse
+refreshTask root =
     Http.request
         { method = "GET"
         , headers = []
-        , url = routes.refreshUrl
+        , url = routes root |> .refreshUrl
         , body = Http.emptyBody
         , expect = Http.expectJson authResponseDecoder
         , timeout = Nothing
@@ -120,12 +116,12 @@ refreshTask =
         }
 
 
-logoutTask : Http.Request ()
-logoutTask =
+logoutTask : String -> Http.Request ()
+logoutTask root =
     Http.request
         { method = "POST"
         , headers = []
-        , url = routes.logoutUrl
+        , url = routes root |> .logoutUrl
         , body = Http.emptyBody
         , expect = Http.expectStringResponse (\_ -> Ok ())
         , timeout = Nothing

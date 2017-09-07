@@ -9,8 +9,7 @@ module AuthController
         , extractAuthState
         )
 
-{-|
-Maintains the auth state and follows the TEA pattern to provide a stateful auth
+{-| Maintains the auth state and follows the TEA pattern to provide a stateful auth
 module that can be wired in to TEA applications update cycles.
 @docs Model, Msg
 @docs init, logonAttempted, update, updateFromAuthCmd, extractAuthState
@@ -56,17 +55,21 @@ type Model
         , authState : AuthState
         , forwardLocation : String
         , logoutLocation : String
+        , authApiRoot : String
         , logonAttempted : Bool
         }
 
 
-{-| The initial unauthed state.
--}
-init :
+type alias Config =
     { forwardLocation : String
     , logoutLocation : String
+    , authApiRoot : String
     }
-    -> Model
+
+
+{-| The initial unauthed state.
+-}
+init : Config -> Model
 init config =
     Model
         { token = Nothing
@@ -76,12 +79,12 @@ init config =
         , authState = notAuthedState
         , forwardLocation = config.forwardLocation
         , logoutLocation = config.logoutLocation
+        , authApiRoot = config.authApiRoot
         , logonAttempted = False
         }
 
 
-{-|
-Extracts the publicly visible auth state from the model.
+{-| Extracts the publicly visible auth state from the model.
 -}
 extractAuthState : Model -> Auth.AuthState
 extractAuthState (Model model) =
@@ -278,19 +281,19 @@ delayedRefreshCmd (Model model) =
             Cmd.none
 
         Just refreshDate ->
-            tokenExpiryTask refreshDate
+            tokenExpiryTask model.authApiRoot refreshDate
                 |> Task.attempt (\result -> Refreshed result)
 
 
-tokenExpiryTask : Date -> Task.Task Http.Error Model.AuthResponse
-tokenExpiryTask refreshDate =
+tokenExpiryTask : String -> Date -> Task.Task Http.Error Model.AuthResponse
+tokenExpiryTask root refreshDate =
     let
         delay refreshDate now =
             max 0 ((Date.toTime refreshDate) - now)
     in
         Time.now
             |> andThen (\now -> Process.sleep <| delay refreshDate now)
-            |> andThen (\_ -> Http.toTask Auth.Service.refreshTask)
+            |> andThen (\_ -> Auth.Service.refreshTask root |> Http.toTask)
 
 
 authRequestFromCredentials : Credentials -> Model.AuthRequest
@@ -326,14 +329,14 @@ update msg (Model model) =
                             , authState = authStateFromToken Nothing
                             , logonAttempted = True
                         }
-                    , Auth.Service.invokeLogin AuthApi (authRequestFromCredentials credentials)
+                    , Auth.Service.invokeLogin model.authApiRoot AuthApi (authRequestFromCredentials credentials)
                     )
 
         Refresh ->
-            ( Model { model | logonAttempted = False }, Auth.Service.invokeRefresh AuthApi )
+            ( Model { model | logonAttempted = False }, Auth.Service.invokeRefresh model.authApiRoot AuthApi )
 
         LogOut ->
-            ( Model { model | logonAttempted = False }, Auth.Service.invokeLogout AuthApi )
+            ( Model { model | logonAttempted = False }, Auth.Service.invokeLogout model.authApiRoot AuthApi )
 
         NotAuthed ->
             ( Model
@@ -357,8 +360,7 @@ update msg (Model model) =
                         ( Model model, Cmd.none )
 
 
-{-|
-Processes an AuthCmd representing a side effect request to perform some auth action
+{-| Processes an AuthCmd representing a side effect request to perform some auth action
 and to update the state.
 -}
 updateFromAuthCmd : AuthCmd -> Model -> ( Model, Cmd Msg )
