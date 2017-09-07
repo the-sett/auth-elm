@@ -6,8 +6,8 @@ module.exports = function(grunt) {
 
     grunt.initConfig({
         'exec': {
-            'elm-github-install': {
-                command: 'elm-github-install'
+            'elm-install': {
+                command: 'elm-install'
             }
         },
 
@@ -37,5 +37,5 @@ module.exports = function(grunt) {
     });
 
     grunt.registerTask('dev', ['build', 'watch:dev']);
-    grunt.registerTask('build', ['exec:elm-github-install', 'elm']);
+    grunt.registerTask('build', ['exec:elm-install', 'elm']);
 };
