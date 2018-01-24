@@ -1,18 +1,9 @@
-module Login
-    exposing
-        ( Model
-        , Msg
-        , init
-        , update
-        , loginView
-        , notPermittedView
-        )
+module Login exposing (init, update, loginView, notPermittedView, Model, Msg, OutMsg(..))
 
 import Platform.Cmd exposing (Cmd)
 import Material
 import Auth
-import Material
-import Html exposing (Html, div, text, form, img, h4)
+import Html exposing (Html, div, text, h4, img, form)
 import Html.Lazy
 import Html.Attributes exposing (title, class, href, src, action)
 import Material.Button as Button
@@ -39,6 +30,10 @@ type Msg
     | UpdatePassword String
 
 
+type OutMsg
+    = AuthMsg Auth.AuthCmd
+
+
 init : Model
 init =
     { mdl = Material.model
@@ -47,33 +42,33 @@ init =
     }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe OutMsg )
 update action model =
-    case action of
+    case (Debug.log "welcome" action) of
         Mdl action_ ->
-            Material.update Mdl action_ model
+            let
+                ( newModel, cmd ) =
+                    Material.update Mdl action_ model
+            in
+                ( newModel, cmd, Nothing )
 
         GetStarted ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, Nothing )
 
         LogIn ->
-            ( model
-            , Cmd.batch
-                [ Auth.login { username = model.username, password = model.password }
-                ]
-            )
+            ( model, Cmd.none, Just (AuthMsg (Auth.login { username = model.username, password = model.password })) )
 
         TryAgain ->
-            ( model, Cmd.batch [ Auth.unauthed ] )
+            ( model, Cmd.none, Just (AuthMsg Auth.unauthed) )
 
         Cancel ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, Nothing )
 
         UpdateUsername str ->
-            ( { model | username = str }, Cmd.none )
+            ( { model | username = str }, Cmd.none, Nothing )
 
         UpdatePassword str ->
-            ( { model | password = str }, Cmd.none )
+            ( { model | password = str }, Cmd.none, Nothing )
 
 
 loginView : Model -> Html Msg
