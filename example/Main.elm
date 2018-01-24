@@ -39,6 +39,7 @@ type alias Model =
 -}
 type Msg
     = AuthMsg AuthController.Msg
+    | AuthCmdMsg Auth.AuthCmd
     | LoginMsg Login.Msg
 
 
@@ -72,18 +73,24 @@ update action model =
     case ( model.session, action ) of
         -- (Initial state, Ready) ->
         --     Auth.refresh
-        -- ( _, AuthMsg msg ) ->
-        --     updateAuthMsg msg model
+        ( _, AuthMsg msg ) ->
+            updateAuthMsg msg model
+
+        ( _, AuthCmdMsg msg ) ->
+            AuthController.updateFromAuthCmd msg model.auth
+                |> Tuple.mapFirst (\auth -> { model | auth = auth })
+                |> Tuple.mapSecond (Cmd.map AuthMsg)
+
         ( Welcome state, LoginMsg msg ) ->
             let
-                ( newState, cmdMsgs ) =
+                ( newState, cmdMsgs, maybeAuthCmd ) =
                     updateLoginMsg msg state
             in
                 ( { model | session = Welcome newState }, cmdMsgs )
 
         ( FailedAuth state, LoginMsg msg ) ->
             let
-                ( newState, cmdMsgs ) =
+                ( newState, cmdMsgs, maybeAuthCmd ) =
                     updateLoginMsg msg state
             in
                 ( { model | session = FailedAuth newState }, cmdMsgs )
@@ -92,57 +99,54 @@ update action model =
             ( model, Cmd.none )
 
 
-updateLoginMsg : Login.Msg -> State t Login.Model -> ( State t Login.Model, Cmd Msg )
+updateAuthMsg : AuthController.Msg -> Model -> ( Model, Cmd Msg )
+updateAuthMsg msg model =
+    let
+        ( authUpdatedModel, authUpdateCmds ) =
+            lift .auth (\m x -> { m | auth = x }) AuthMsg AuthController.update msg model
+
+        isAuthenticated =
+            AuthController.extractAuthState authUpdatedModel.auth |> Auth.isLoggedIn
+
+        logonAttempted =
+            AuthController.logonAttempted authUpdatedModel.auth
+
+        ( session, initCmds ) =
+            case ( model.session, isAuthenticated, logonAttempted ) of
+                ( Welcome state, True, _ ) ->
+                    ( toAuthenticated state, Cmd.none )
+
+                ( Welcome state, False, True ) ->
+                    ( toFailedAuth state, Cmd.none )
+
+                -- else if not refreshAttempted then
+                --     ( Initial, Cmd.none )
+                ( FailedAuth state, _, _ ) ->
+                    ( toWelcome state, Cmd.none )
+
+                ( Initial state, _, _ ) ->
+                    ( toWelcomeWithLoginModel Login.init state, Cmd.none )
+
+                ( Authenticated state, _, _ ) ->
+                    ( toWelcomeWithLoginModel Login.init state, Cmd.none )
+
+                ( _, _, _ ) ->
+                    ( model.session, Cmd.none )
+    in
+        ( { authUpdatedModel | session = session }, Cmd.batch [ authUpdateCmds, initCmds ] )
+
+
+updateLoginMsg : Login.Msg -> State t Login.Model -> ( State t Login.Model, Cmd Msg, Maybe Auth.AuthCmd )
 updateLoginMsg msg state =
     case Login.update msg (TopState.untag state) of
-        ( loginModel, cmd, authCmd ) ->
+        ( loginModel, cmd, maybeAuthCmd ) ->
             ( updateLoginModel (always loginModel) state
             , Cmd.map LoginMsg cmd
+            , maybeAuthCmd
             )
 
 
 
--- updateAuthMsg : AuthController.Msg -> Model -> ( Model, Cmd Msg )
--- updateAuthMsg msg model =
---     let
---         ( authUpdatedModel, authUpdateCmds ) =
---             lift .auth (\m x -> { m | auth = x }) AuthMsg AuthController.update msg model
---
---         isAuthenticated =
---             AuthController.isLoggedIn authUpdatedModel.auth.authState
---
---         logonAttempted =
---             AuthController.logonAttempted authUpdatedModel.auth
---
---         hasPermission =
---             AuthController.hasPermission "content-author" authUpdatedModel.auth.authState
---
---         ( session, initCmds ) =
---             case ( model.session, isAuthenticated, hasPermission, logonAttempted ) of
---                 ( Welcome state, True, True, _ ) ->
---                     ( toAuthenticated state, Cmd.none )
---
---                 ( Welcome state, True, False, _ ) ->
---                     ( toFailedAuth state, Cmd.none )
---
---                 ( Welcome state, False, _, True ) ->
---                     ( toFailedAuth state, Cmd.none )
---
---                 -- else if not refreshAttempted then
---                 --     ( Initial, Cmd.none )
---                 ( FailedAuth state, _, _, _ ) ->
---                     ( toWelcome state, Cmd.none )
---
---                 ( Initial state, _, _, _ ) ->
---                     ( toWelcomeWithWelcome { welcome = Welcome.Auth.init } state, Cmd.none )
---
---                 ( Authenticated state, _, _, _ ) ->
---                     ( toWelcomeWithWelcome { welcome = Welcome.Auth.init } state, Cmd.none )
---
---                 ( _, _, _, _ ) ->
---                     ( model.session, Cmd.none )
---     in
---         ( { authUpdatedModel | session = session }, Cmd.batch [ authUpdateCmds, initCmds ] )
 -- View
 
 
