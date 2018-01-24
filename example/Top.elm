@@ -84,14 +84,24 @@ update action model =
                 ( newState, cmdMsgs, maybeAuthCmd ) =
                     updateLoginMsg msg state
             in
-                ( { model | session = Welcome newState }, cmdMsgs )
+                case maybeAuthCmd of
+                    Nothing ->
+                        ( { model | session = Welcome newState }, cmdMsgs )
+
+                    Just authCmd ->
+                        ( { model | session = Welcome newState }, Cmd.batch [ message (AuthCmdMsg authCmd), cmdMsgs ] )
 
         ( FailedAuth state, LoginMsg msg ) ->
             let
                 ( newState, cmdMsgs, maybeAuthCmd ) =
                     updateLoginMsg msg state
             in
-                ( { model | session = FailedAuth newState }, cmdMsgs )
+                case maybeAuthCmd of
+                    Nothing ->
+                        ( { model | session = FailedAuth newState }, cmdMsgs )
+
+                    Just authCmd ->
+                        ( { model | session = FailedAuth newState }, Cmd.batch [ message (AuthCmdMsg authCmd), cmdMsgs ] )
 
         ( _, _ ) ->
             ( model, Cmd.none )
