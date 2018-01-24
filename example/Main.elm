@@ -24,9 +24,8 @@ import UpdateUtils exposing (lift)
 import TopState as TopState
     exposing
         ( Session(..)
-        , LoginState
         , initial
-        , toWelcomeWithLoginState
+        , toWelcomeWithLoginModel
         , toWelcome
         , toFailedAuth
         , toAuthenticated
@@ -178,10 +177,10 @@ view model =
             Html.div [] []
 
         Welcome state ->
-            Login.loginView (TopState.untag state).loginState |> Html.map WelcomeMsg
+            Login.loginView (TopState.untag state) |> Html.map WelcomeMsg
 
         FailedAuth state ->
-            Login.notPermittedView (TopState.untag state).loginState |> Html.map WelcomeMsg
+            Login.notPermittedView (TopState.untag state) |> Html.map WelcomeMsg
 
         _ ->
             Html.div [] []

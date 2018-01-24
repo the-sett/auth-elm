@@ -1,11 +1,10 @@
 module TopState
     exposing
         ( Session(..)
-        , LoginState
         , initial
         , updateWelcome
         , toWelcome
-        , toWelcomeWithLoginState
+        , toWelcomeWithLoginModel
         , toFailedAuth
         , toAuthenticated
         , untag
@@ -15,14 +14,10 @@ import Login
 import StateMachine exposing (State(..), Allowed)
 
 
-type alias LoginState =
-    { loginState : Login.Model }
-
-
 type Session
     = Initial (State { loginState : Allowed } {})
-    | Welcome (State { authenticated : Allowed, failedAuth : Allowed } LoginState)
-    | FailedAuth (State { loginState : Allowed } LoginState)
+    | Welcome (State { authenticated : Allowed, failedAuth : Allowed } Login.Model)
+    | FailedAuth (State { loginState : Allowed } Login.Model)
     | Authenticated (State { loginState : Allowed } {})
 
 
@@ -40,12 +35,12 @@ initial =
     State {} |> Initial
 
 
-welcome : LoginState -> Session
+welcome : Login.Model -> Session
 welcome loginState =
     State loginState |> Welcome
 
 
-failedAuth : LoginState -> Session
+failedAuth : Login.Model -> Session
 failedAuth loginState =
     State loginState |> FailedAuth
 
@@ -60,9 +55,9 @@ authenticated =
 
 
 updateWelcome :
-    (LoginState -> LoginState)
-    -> State p LoginState
-    -> State p LoginState
+    (Login.Model -> Login.Model)
+    -> State p Login.Model
+    -> State p Login.Model
 updateWelcome func state =
     StateMachine.map func state
 
@@ -72,21 +67,21 @@ updateWelcome func state =
 -- to make a transition.
 
 
-toWelcome : State { a | loginState : Allowed } LoginState -> Session
+toWelcome : State { a | loginState : Allowed } Login.Model -> Session
 toWelcome (State model) =
     welcome model
 
 
-toWelcomeWithLoginState : LoginState -> State { a | loginState : Allowed } m -> Session
-toWelcomeWithLoginState loginState _ =
+toWelcomeWithLoginModel : Login.Model -> State { a | loginState : Allowed } m -> Session
+toWelcomeWithLoginModel loginState _ =
     welcome loginState
 
 
-toFailedAuth : State { a | failedAuth : Allowed } LoginState -> Session
+toFailedAuth : State { a | failedAuth : Allowed } Login.Model -> Session
 toFailedAuth (State model) =
     failedAuth model
 
 
-toAuthenticated : State { a | authenticated : Allowed } LoginState -> Session
+toAuthenticated : State { a | authenticated : Allowed } Login.Model -> Session
 toAuthenticated _ =
     authenticated
