@@ -1,6 +1,6 @@
 {
     "version": "1.0.0",
-    "summary": "Test Suites",
+    "summary": "Authentication Example",
     "repository": "https://github.com/the-sett/auth-elm.git",
     "license": "Apache License, version 2.0",
     "source-directories": [
