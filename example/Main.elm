@@ -125,9 +125,6 @@ updateAuthMsg msg model =
                 ( Initial state, _, _ ) ->
                     ( toWelcomeWithLoginModel Login.init state, Cmd.none )
 
-                ( Authenticated state, _, _ ) ->
-                    ( toWelcomeWithLoginModel Login.init state, Cmd.none )
-
                 ( _, _, _ ) ->
                     ( model.session, Cmd.none )
     in
