@@ -1,19 +1,17 @@
 {
     "version": "1.0.0",
-    "summary": "Elm auth module for interacting with the-sett/auth-service.",
+    "summary": "Test Suites",
     "repository": "https://github.com/the-sett/auth-elm.git",
     "license": "Apache License, version 2.0",
     "source-directories": [
-        "src/"
+        "../src/",
+        "."
     ],
-    "exposed-modules": [
-        "Auth",
-        "AuthController"
-    ],
+    "exposed-modules": [],
     "dependencies": {
+        "elm-lang/core": "5.0.0 <= v < 6.0.0",
         "elm-community/json-extra": "2.0.0 <= v < 3.0.0",
         "elm-community/maybe-extra": "3.0.0 <= v < 4.0.0",
-        "elm-lang/core": "5.0.0 <= v < 6.0.0",
         "elm-lang/http": "1.0.0 <= v < 2.0.0",
         "elm-lang/navigation": "2.0.1 <= v < 3.0.0",
         "krisajenkins/elm-exts": "26.1.0 <= v < 27.0.0",

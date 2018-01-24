@@ -4,6 +4,6 @@
 /dist/
 /app/
 /.sass-cache/
-/elm-stuff/
+elm-stuff/
 /bower_components/
 /linter-elm-work/
