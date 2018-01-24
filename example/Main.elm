@@ -1,15 +1,8 @@
-module Main
-    exposing
-        ( init
-        , update
-        , view
-        , Model
-        , Msg
-        )
+module Main exposing (init, update, view, Model, Msg)
 
 {-| The content editor client top module.
 
-@docs delta2url, location2messages, init, update, subscriptions, view, Model, Msg
+@docs init, update, subscriptions, view, Model, Msg
 
 -}
 
@@ -29,7 +22,7 @@ import TopState as TopState
         , toWelcome
         , toFailedAuth
         , toAuthenticated
-        , updateWelcome
+        , updateLoginModel
         )
 import StateMachine exposing (State)
 
@@ -46,33 +39,30 @@ type alias Model =
 -}
 type Msg
     = AuthMsg AuthController.Msg
-    | WelcomeMsg Login.Msg
+    | LoginMsg Login.Msg
 
 
 
 -- Initialization
 
 
-{-| Initiales the application state by setting it to the 'Initial' state. Requests
-that an Auth refreshed be performed to check what the current authentication
-state is.
+{-| Initiales the application state by setting it to the 'Initial' state.
+Requests that an Auth refresh be performed to check what the current
+authentication state is, as the application may be able to re-authenticate
+from a refresh token held as a cookie, without needing the user to log in.
 -}
 init : ( Model, Cmd Msg )
 init =
     ( { auth =
             AuthController.init
                 { logoutLocation = "#welcome"
-                , forwardLocation = "#accounts"
+                , forwardLocation = "#welcome"
                 , authApiRoot = config.authRoot
                 }
       , session = initial
       }
     , Cmd.none
     )
-
-
-setLoginLocations authState =
-    { authState | logoutLocation = "#/welcome", forwardLocation = "" }
 
 
 {-| Processes state updates for the content editor.
@@ -84,29 +74,31 @@ update action model =
         --     Auth.refresh
         -- ( _, AuthMsg msg ) ->
         --     updateAuthMsg msg model
-        ( Welcome state, WelcomeMsg msg ) ->
+        ( Welcome state, LoginMsg msg ) ->
             let
                 ( newState, cmdMsgs ) =
-                    updateWelcomeMsg msg state
+                    updateLoginMsg msg state
             in
                 ( { model | session = Welcome newState }, cmdMsgs )
 
-        ( FailedAuth state, WelcomeMsg msg ) ->
+        ( FailedAuth state, LoginMsg msg ) ->
             let
                 ( newState, cmdMsgs ) =
-                    updateWelcomeMsg msg state
+                    updateLoginMsg msg state
             in
                 ( { model | session = FailedAuth newState }, cmdMsgs )
 
-        ( Authenticated state, WelcomeMsg msg ) ->
-            let
-                ( newState, cmdMsgs ) =
-                    updateWelcomeMsg msg state
-            in
-                ( { model | session = Authenticated newState }, cmdMsgs )
-
         ( _, _ ) ->
             ( model, Cmd.none )
+
+
+updateLoginMsg : Login.Msg -> State t Login.Model -> ( State t Login.Model, Cmd Msg )
+updateLoginMsg msg state =
+    case Login.update msg (TopState.untag state) of
+        ( loginModel, cmd, authCmd ) ->
+            ( updateLoginModel (always loginModel) state
+            , Cmd.map LoginMsg cmd
+            )
 
 
 
@@ -151,20 +143,6 @@ update action model =
 --                     ( model.session, Cmd.none )
 --     in
 --         ( { authUpdatedModel | session = session }, Cmd.batch [ authUpdateCmds, initCmds ] )
-
-
-updateWelcomeMsg msg state =
-    ( state, Cmd.none )
-
-
-
--- updateWelcomeMsg : Welcome.Auth.Msg -> State t WithWelcome -> ( State t WithWelcome, Cmd Msg )
--- updateWelcomeMsg msg state =
---     case Welcome.Auth.update msg (TopState.untag state).welcome of
---         ( welcome, cmd ) ->
---             ( updateWelcome (always { welcome = welcome }) state
---             , Cmd.map WelcomeMsg cmd
---             )
 -- View
 
 
@@ -177,10 +155,10 @@ view model =
             Html.div [] []
 
         Welcome state ->
-            Login.loginView (TopState.untag state) |> Html.map WelcomeMsg
+            Login.loginView (TopState.untag state) |> Html.map LoginMsg
 
         FailedAuth state ->
-            Login.notPermittedView (TopState.untag state) |> Html.map WelcomeMsg
+            Login.notPermittedView (TopState.untag state) |> Html.map LoginMsg
 
         Authenticated state ->
             Login.authenticatedView

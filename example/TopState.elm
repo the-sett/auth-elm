@@ -2,7 +2,7 @@ module TopState
     exposing
         ( Session(..)
         , initial
-        , updateWelcome
+        , updateLoginModel
         , toWelcome
         , toWelcomeWithLoginModel
         , toFailedAuth
@@ -54,11 +54,11 @@ authenticated =
 -- Update functions that can be applied when parts of the model are present.
 
 
-updateWelcome :
+updateLoginModel :
     (Login.Model -> Login.Model)
     -> State p Login.Model
     -> State p Login.Model
-updateWelcome func state =
+updateLoginModel func state =
     StateMachine.map func state
 
 
