@@ -1,8 +1,8 @@
 module Config exposing (Config, config, configDecoder)
 
-{-| Defines the configuration that the content editor needs to run. This provides
-urls for the services with which it interacts. A default configuration and a
-decoder for config as json are provided.
+{-| Defines the configuration that the authentication example needs to run.
+This provides urls for the services with which it interacts. A default
+configuration and a decoder for config as json are provided.
 
 @docs Config, config, configDecoder
 

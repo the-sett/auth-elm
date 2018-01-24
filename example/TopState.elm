@@ -1,11 +1,11 @@
 module TopState
     exposing
         ( Session(..)
-        , WithWelcome
+        , LoginState
         , initial
         , updateWelcome
         , toWelcome
-        , toWelcomeWithWelcome
+        , toWelcomeWithLoginState
         , toFailedAuth
         , toAuthenticated
         , untag
@@ -15,15 +15,15 @@ import Login
 import StateMachine exposing (State(..), Allowed)
 
 
-type alias WithWelcome =
-    { welcome : Login.Model }
+type alias LoginState =
+    { loginState : Login.Model }
 
 
 type Session
-    = Initial (State { welcome : Allowed } {})
-    | Welcome (State { authenticated : Allowed, failedAuth : Allowed } WithWelcome)
-    | FailedAuth (State { welcome : Allowed } WithWelcome)
-    | Authenticated (State { welcome : Allowed } {})
+    = Initial (State { loginState : Allowed } {})
+    | Welcome (State { authenticated : Allowed, failedAuth : Allowed } LoginState)
+    | FailedAuth (State { loginState : Allowed } LoginState)
+    | Authenticated (State { loginState : Allowed } {})
 
 
 untag : State tag value -> value
@@ -40,14 +40,14 @@ initial =
     State {} |> Initial
 
 
-welcome : WithWelcome -> Session
-welcome welcome =
-    State welcome |> Welcome
+welcome : LoginState -> Session
+welcome loginState =
+    State loginState |> Welcome
 
 
-failedAuth : WithWelcome -> Session
-failedAuth welcome =
-    State welcome |> FailedAuth
+failedAuth : LoginState -> Session
+failedAuth loginState =
+    State loginState |> FailedAuth
 
 
 authenticated : Session
@@ -60,9 +60,9 @@ authenticated =
 
 
 updateWelcome :
-    (WithWelcome -> WithWelcome)
-    -> State p WithWelcome
-    -> State p WithWelcome
+    (LoginState -> LoginState)
+    -> State p LoginState
+    -> State p LoginState
 updateWelcome func state =
     StateMachine.map func state
 
@@ -72,21 +72,21 @@ updateWelcome func state =
 -- to make a transition.
 
 
-toWelcome : State { a | welcome : Allowed } WithWelcome -> Session
+toWelcome : State { a | loginState : Allowed } LoginState -> Session
 toWelcome (State model) =
     welcome model
 
 
-toWelcomeWithWelcome : WithWelcome -> State { a | welcome : Allowed } m -> Session
-toWelcomeWithWelcome welcomeModel _ =
-    welcome welcomeModel
+toWelcomeWithLoginState : LoginState -> State { a | loginState : Allowed } m -> Session
+toWelcomeWithLoginState loginState _ =
+    welcome loginState
 
 
-toFailedAuth : State { a | failedAuth : Allowed } WithWelcome -> Session
+toFailedAuth : State { a | failedAuth : Allowed } LoginState -> Session
 toFailedAuth (State model) =
     failedAuth model
 
 
-toAuthenticated : State { a | authenticated : Allowed } m -> Session
+toAuthenticated : State { a | authenticated : Allowed } LoginState -> Session
 toAuthenticated _ =
     authenticated

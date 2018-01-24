@@ -19,14 +19,14 @@ message x =
     Task.perform identity (Task.succeed x)
 
 
-{-| Variant of EA update function type, where effects may be
+{-| Variant of TEA update function type, where effects may be
 lifted to a different type.
 -}
 type alias Update_ model action action_ =
     action -> model -> ( model, Cmd action_ )
 
 
-{-| Standard EA update function type.
+{-| Standard TEA update function type.
 -}
 type alias Update model action =
     Update_ model action action

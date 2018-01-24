@@ -1,4 +1,4 @@
-module Login exposing (init, update, loginView, notPermittedView, Model, Msg, OutMsg(..))
+module Login exposing (init, update, loginView, notPermittedView, Model, Msg)
 
 import Platform.Cmd exposing (Cmd)
 import Material
@@ -30,10 +30,6 @@ type Msg
     | UpdatePassword String
 
 
-type OutMsg
-    = AuthMsg Auth.AuthCmd
-
-
 init : Model
 init =
     { mdl = Material.model
@@ -42,7 +38,7 @@ init =
     }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe OutMsg )
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe Auth.AuthCmd )
 update action model =
     case (Debug.log "welcome" action) of
         Mdl action_ ->
@@ -56,10 +52,10 @@ update action model =
             ( model, Cmd.none, Nothing )
 
         LogIn ->
-            ( model, Cmd.none, Just (AuthMsg (Auth.login { username = model.username, password = model.password })) )
+            ( model, Cmd.none, Just (Auth.login { username = model.username, password = model.password }) )
 
         TryAgain ->
-            ( model, Cmd.none, Just (AuthMsg Auth.unauthed) )
+            ( model, Cmd.none, Just Auth.unauthed )
 
         Cancel ->
             ( model, Cmd.none, Nothing )
@@ -71,7 +67,7 @@ update action model =
             ( { model | password = str }, Cmd.none, Nothing )
 
 
-loginView : Model -> Html Msg
+loginView : { a | mdl : Material.Model } -> Html Msg
 loginView model =
     div []
         [ div [ class "layout-fixed-width--one-card" ]
@@ -132,7 +128,7 @@ loginView model =
         ]
 
 
-notPermittedView : Model -> Html Msg
+notPermittedView : { a | mdl : Material.Model } -> Html Msg
 notPermittedView model =
     div []
         [ div [ class "layout-fixed-width--one-card" ]
@@ -191,3 +187,9 @@ notPermittedView model =
                 ]
             ]
         ]
+
+
+authenticatedView : { a | mdl : Material.Model } -> Html Msg
+authenticatedView model =
+    div []
+        [ text "Authenticated" ]
