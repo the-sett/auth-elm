@@ -13,7 +13,7 @@ import Html exposing (Html)
 import Config exposing (config)
 import Auth
 import Maybe.Extra
-import UpdateUtils exposing (lift)
+import UpdateUtils exposing (lift, message)
 import TopState as TopState
     exposing
         ( Session(..)
@@ -62,7 +62,7 @@ init =
                 }
       , session = initial
       }
-    , Cmd.none
+    , message <| AuthCmdMsg Auth.refresh
     )
 
 
@@ -71,8 +71,6 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
     case ( model.session, action ) of
-        -- (Initial state, Ready) ->
-        --     Auth.refresh
         ( _, AuthMsg msg ) ->
             updateAuthMsg msg model
 
