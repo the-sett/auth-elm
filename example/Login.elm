@@ -1,4 +1,13 @@
-module Login exposing (init, update, loginView, notPermittedView, Model, Msg)
+module Login
+    exposing
+        ( Model
+        , Msg
+        , init
+        , update
+        , loginView
+        , notPermittedView
+        , authenticatedView
+        )
 
 import Platform.Cmd exposing (Cmd)
 import Material
@@ -189,7 +198,7 @@ notPermittedView model =
         ]
 
 
-authenticatedView : { a | mdl : Material.Model } -> Html Msg
-authenticatedView model =
+authenticatedView : Html msg
+authenticatedView =
     div []
         [ text "Authenticated" ]

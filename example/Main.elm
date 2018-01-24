@@ -182,10 +182,5 @@ view model =
         FailedAuth state ->
             Login.notPermittedView (TopState.untag state) |> Html.map WelcomeMsg
 
-        _ ->
-            Html.div [] []
-
-
-
--- Authenticated state ->
---     Login.notPermittedView (TopState.untag state).welcome |> Html.map WelcomeMsg
+        Authenticated state ->
+            Login.authenticatedView
