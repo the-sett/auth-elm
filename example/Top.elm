@@ -70,7 +70,7 @@ init =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
-    case ( model.session, Debug.log "top" action ) of
+    case ( model.session, action ) of
         ( _, AuthMsg msg ) ->
             let
                 ( authUpdatedModel, authUpdateCmds ) =
@@ -118,9 +118,6 @@ update action model =
 updateSessionFromAuthState : Model -> Model
 updateSessionFromAuthState model =
     let
-        d =
-            Debug.log "model.auth" model.auth
-
         isAuthenticated =
             Debug.log "isAuthenticated" <|
                 Auth.isLoggedIn <|
@@ -131,7 +128,7 @@ updateSessionFromAuthState model =
                 AuthController.logonAttempted model.auth
 
         session =
-            case ( Debug.log "session start" model.session, isAuthenticated, logonAttempted ) of
+            case ( model.session, isAuthenticated, logonAttempted ) of
                 ( Welcome state, True, _ ) ->
                     toAuthenticated state
 
@@ -149,7 +146,7 @@ updateSessionFromAuthState model =
                 ( _, _, _ ) ->
                     model.session
     in
-        { model | session = Debug.log "session end" session }
+        { model | session = session }
 
 
 updateLoginMsg : Login.Msg -> State t Login.Model -> ( State t Login.Model, Cmd Msg, Maybe Auth.AuthCmd )
