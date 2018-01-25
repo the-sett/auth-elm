@@ -7,7 +7,6 @@ module Top exposing (init, update, view, Model, Msg)
 -}
 
 import Dict exposing (Dict)
-import AuthController
 import Login
 import Authenticated
 import Html exposing (Html, div)
@@ -32,7 +31,7 @@ import StateMachine exposing (State)
 {-| The content editor program model.
 -}
 type alias Model =
-    { auth : AuthController.Model
+    { auth : Auth.Model
     , session : Session
     }
 
@@ -40,8 +39,7 @@ type alias Model =
 {-| The content editor program top-level message types.
 -}
 type Msg
-    = AuthMsg AuthController.Msg
-    | AuthCmdMsg Auth.AuthCmd
+    = AuthMsg Auth.Msg
     | LoginMsg Login.Msg
 
 
@@ -57,14 +55,14 @@ from a refresh token held as a cookie, without needing the user to log in.
 init : ( Model, Cmd Msg )
 init =
     ( { auth =
-            AuthController.init
+            Auth.init
                 { logoutLocation = "#welcome"
                 , forwardLocation = "#welcome"
                 , authApiRoot = config.authRoot
                 }
       , session = initial
       }
-    , message <| AuthCmdMsg Auth.refresh
+    , message <| AuthMsg Auth.refresh
     )
 
 
@@ -74,18 +72,9 @@ update action model =
         ( _, AuthMsg msg ) ->
             let
                 ( authUpdatedModel, authUpdateCmds ) =
-                    lift .auth (\m x -> { m | auth = x }) AuthMsg AuthController.update msg model
+                    lift .auth (\m x -> { m | auth = x }) AuthMsg Auth.update msg model
             in
                 ( updateSessionFromAuthState authUpdatedModel, authUpdateCmds )
-
-        ( _, AuthCmdMsg msg ) ->
-            let
-                ( authUpdatedModel, authUpdateCmds ) =
-                    AuthController.updateFromAuthCmd msg model.auth
-                        |> Tuple.mapFirst (\auth -> { model | auth = auth })
-                        |> Tuple.mapSecond (Cmd.map AuthMsg)
-            in
-                ( authUpdatedModel, authUpdateCmds )
 
         ( Welcome state, LoginMsg msg ) ->
             let
@@ -97,7 +86,7 @@ update action model =
                         ( { model | session = Welcome newState }, cmdMsgs )
 
                     Just authCmd ->
-                        ( { model | session = Welcome newState }, Cmd.batch [ message (AuthCmdMsg authCmd), cmdMsgs ] )
+                        ( { model | session = Welcome newState }, Cmd.batch [ message (AuthMsg authCmd), cmdMsgs ] )
 
         ( FailedAuth state, LoginMsg msg ) ->
             let
@@ -109,7 +98,7 @@ update action model =
                         ( { model | session = FailedAuth newState }, cmdMsgs )
 
                     Just authCmd ->
-                        ( { model | session = FailedAuth newState }, Cmd.batch [ message (AuthCmdMsg authCmd), cmdMsgs ] )
+                        ( { model | session = FailedAuth newState }, Cmd.batch [ message (AuthMsg authCmd), cmdMsgs ] )
 
         ( _, _ ) ->
             ( model, Cmd.none )
@@ -121,11 +110,11 @@ updateSessionFromAuthState model =
         isAuthenticated =
             Debug.log "isAuthenticated" <|
                 Auth.isLoggedIn <|
-                    AuthController.extractAuthState model.auth
+                    Auth.extractAuthState model.auth
 
         logonAttempted =
             Debug.log "logonAttempted" <|
-                AuthController.logonAttempted model.auth
+                Auth.logonAttempted model.auth
 
         session =
             case ( model.session, isAuthenticated, logonAttempted ) of
@@ -149,7 +138,7 @@ updateSessionFromAuthState model =
         { model | session = session }
 
 
-updateLoginMsg : Login.Msg -> State t Login.Model -> ( State t Login.Model, Cmd Msg, Maybe Auth.AuthCmd )
+updateLoginMsg : Login.Msg -> State t Login.Model -> ( State t Login.Model, Cmd Msg, Maybe Auth.Msg )
 updateLoginMsg msg state =
     case Login.update msg (TopState.untag state) of
         ( loginModel, cmd, maybeAuthCmd ) ->

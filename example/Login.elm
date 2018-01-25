@@ -46,7 +46,7 @@ init =
     }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg, Maybe Auth.AuthCmd )
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe Auth.Msg )
 update action model =
     case action of
         Mdl action_ ->
