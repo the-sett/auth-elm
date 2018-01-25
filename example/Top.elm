@@ -9,7 +9,8 @@ module Top exposing (init, update, view, Model, Msg)
 import Dict exposing (Dict)
 import AuthController
 import Login
-import Html exposing (Html)
+import Html exposing (Html, div)
+import Html.Attributes
 import Config exposing (config)
 import Auth
 import Maybe.Extra
@@ -155,19 +156,37 @@ updateLoginMsg msg state =
 -- View
 
 
-{-| Top level view function for the content editor SPA.
+{-| Top level view function.
 -}
 view : Model -> Html Msg
 view model =
-    case model.session of
-        Initial _ ->
-            Html.div [] []
+    let
+        innerHtml =
+            case model.session of
+                Initial _ ->
+                    Html.div [] []
 
-        Welcome state ->
-            Login.loginView (TopState.untag state) |> Html.map LoginMsg
+                Welcome state ->
+                    Login.loginView (TopState.untag state) |> Html.map LoginMsg
 
-        FailedAuth state ->
-            Login.notPermittedView (TopState.untag state) |> Html.map LoginMsg
+                FailedAuth state ->
+                    Login.notPermittedView (TopState.untag state) |> Html.map LoginMsg
 
-        Authenticated state ->
-            Login.authenticatedView
+                Authenticated state ->
+                    Login.authenticatedView
+
+        styleLink cssFileName =
+            Html.node "link"
+                [ Html.Attributes.rel "stylesheet"
+                , Html.Attributes.href <| "styles/" ++ cssFileName
+                ]
+                []
+    in
+        div []
+            [ styleLink "roboto.css"
+            , styleLink "material-icons.css"
+            , styleLink "material.green-indigo.min.css"
+            , styleLink "main.css"
+            , styleLink "auth-service.css"
+            , innerHtml
+            ]
