@@ -314,7 +314,7 @@ auth server.
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg (Model model) =
-    case (Debug.log "auth" msg) of
+    case msg of
         AuthApi action_ ->
             Auth.Service.update callbacks action_ (Model model)
 

@@ -54,7 +54,7 @@ callbacks =
 
 update : Callbacks model msg -> Msg -> model -> ( model, Cmd msg )
 update callbacks action model =
-    case (Debug.log "account.api" action) of
+    case action of
         Login result ->
             (case result of
                 Ok response ->
