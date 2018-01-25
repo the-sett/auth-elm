@@ -6,7 +6,6 @@ module Login
         , update
         , loginView
         , notPermittedView
-        , authenticatedView
         )
 
 import Platform.Cmd exposing (Cmd)
@@ -49,7 +48,7 @@ init =
 
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe Auth.AuthCmd )
 update action model =
-    case (Debug.log "welcome" action) of
+    case action of
         Mdl action_ ->
             let
                 ( newModel, cmd ) =
@@ -196,9 +195,3 @@ notPermittedView model =
                 ]
             ]
         ]
-
-
-authenticatedView : Html msg
-authenticatedView =
-    div []
-        [ text "Authenticated" ]

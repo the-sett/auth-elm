@@ -23,7 +23,7 @@ type alias Config =
 -}
 config : Config
 config =
-    { authRoot = "http://localhost:9077/auth/"
+    { authRoot = "http://localhost:9073/auth/"
     }
 
 

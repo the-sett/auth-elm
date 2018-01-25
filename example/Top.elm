@@ -9,6 +9,7 @@ module Top exposing (init, update, view, Model, Msg)
 import Dict exposing (Dict)
 import AuthController
 import Login
+import Authenticated
 import Html exposing (Html, div)
 import Html.Attributes
 import Config exposing (config)
@@ -67,18 +68,24 @@ init =
     )
 
 
-{-| Processes state updates for the content editor.
--}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
-    case ( model.session, action ) of
+    case ( model.session, Debug.log "top" action ) of
         ( _, AuthMsg msg ) ->
-            updateAuthMsg msg model
+            let
+                ( authUpdatedModel, authUpdateCmds ) =
+                    lift .auth (\m x -> { m | auth = x }) AuthMsg AuthController.update msg model
+            in
+                ( updateSessionFromAuthState authUpdatedModel, authUpdateCmds )
 
         ( _, AuthCmdMsg msg ) ->
-            AuthController.updateFromAuthCmd msg model.auth
-                |> Tuple.mapFirst (\auth -> { model | auth = auth })
-                |> Tuple.mapSecond (Cmd.map AuthMsg)
+            let
+                ( authUpdatedModel, authUpdateCmds ) =
+                    AuthController.updateFromAuthCmd msg model.auth
+                        |> Tuple.mapFirst (\auth -> { model | auth = auth })
+                        |> Tuple.mapSecond (Cmd.map AuthMsg)
+            in
+                ( authUpdatedModel, authUpdateCmds )
 
         ( Welcome state, LoginMsg msg ) ->
             let
@@ -108,38 +115,41 @@ update action model =
             ( model, Cmd.none )
 
 
-updateAuthMsg : AuthController.Msg -> Model -> ( Model, Cmd Msg )
-updateAuthMsg msg model =
+updateSessionFromAuthState : Model -> Model
+updateSessionFromAuthState model =
     let
-        ( authUpdatedModel, authUpdateCmds ) =
-            lift .auth (\m x -> { m | auth = x }) AuthMsg AuthController.update msg model
+        d =
+            Debug.log "model.auth" model.auth
 
         isAuthenticated =
-            AuthController.extractAuthState authUpdatedModel.auth |> Auth.isLoggedIn
+            Debug.log "isAuthenticated" <|
+                Auth.isLoggedIn <|
+                    AuthController.extractAuthState model.auth
 
         logonAttempted =
-            AuthController.logonAttempted authUpdatedModel.auth
+            Debug.log "logonAttempted" <|
+                AuthController.logonAttempted model.auth
 
-        ( session, initCmds ) =
-            case ( model.session, isAuthenticated, logonAttempted ) of
+        session =
+            case ( Debug.log "session start" model.session, isAuthenticated, logonAttempted ) of
                 ( Welcome state, True, _ ) ->
-                    ( toAuthenticated state, Cmd.none )
+                    toAuthenticated state
 
                 ( Welcome state, False, True ) ->
-                    ( toFailedAuth state, Cmd.none )
+                    toFailedAuth state
 
                 -- else if not refreshAttempted then
                 --     ( Initial, Cmd.none )
                 ( FailedAuth state, _, _ ) ->
-                    ( toWelcome state, Cmd.none )
+                    toWelcome state
 
                 ( Initial state, _, _ ) ->
-                    ( toWelcomeWithLoginModel Login.init state, Cmd.none )
+                    toWelcomeWithLoginModel Login.init state
 
                 ( _, _, _ ) ->
-                    ( model.session, Cmd.none )
+                    model.session
     in
-        ( { authUpdatedModel | session = session }, Cmd.batch [ authUpdateCmds, initCmds ] )
+        { model | session = Debug.log "session end" session }
 
 
 updateLoginMsg : Login.Msg -> State t Login.Model -> ( State t Login.Model, Cmd Msg, Maybe Auth.AuthCmd )
@@ -173,7 +183,7 @@ view model =
                     Login.notPermittedView (TopState.untag state) |> Html.map LoginMsg
 
                 Authenticated state ->
-                    Login.authenticatedView
+                    Authenticated.authenticatedView
 
         styleLink cssFileName =
             Html.node "link"
