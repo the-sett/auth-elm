@@ -109,8 +109,7 @@ updateSessionFromAuthState model =
     let
         isAuthenticated =
             Debug.log "isAuthenticated" <|
-                Auth.isLoggedIn <|
-                    Auth.extractAuthState model.auth
+                Auth.isLoggedIn model.auth
 
         logonAttempted =
             Debug.log "logonAttempted" <|

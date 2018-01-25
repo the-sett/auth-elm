@@ -6,9 +6,7 @@ module Auth
         , logonAttempted
         , update
         , updateForwardLocation
-        , extractAuthState
         , Credentials
-        , AuthState
         , isLoggedIn
         , permissions
         , expiresAt
@@ -42,18 +40,50 @@ import Auth.Service
 import Model
 
 
+{-| The complete state of this auth module.
+-}
+type Model
+    = Model
+        { token : Maybe String
+        , decodedToken : Maybe Token
+        , refreshFrom : Maybe Date
+        , errorMsg : String
+        , authState : AuthState
+        , forwardLocation : String
+        , logoutLocation : String
+        , authApiRoot : String
+        , logonAttempted : Bool
+        }
+
+
 {-| A sub-section of the auth module state describing whether or not the user
 is logged in, what permissions they have, and when their auth token will expire.
 This is the part of the auth state that most consumers of the Auth module are
 interested in.
-A set of operators is provided to extract information from the AuthState for
-convenience.
 -}
 type alias AuthState =
     { loggedIn : Bool
     , permissions : List String
     , expiresAt : Maybe Date
     , username : String
+    }
+
+
+{-| Describes the events this controller responds to.
+-}
+type Msg
+    = AuthApi Auth.Service.Msg
+    | LogIn Credentials
+    | Refresh
+    | LogOut
+    | NotAuthed
+    | Refreshed (Result.Result Http.Error Model.AuthResponse)
+
+
+type alias Config =
+    { forwardLocation : String
+    , logoutLocation : String
+    , authApiRoot : String
     }
 
 
@@ -67,39 +97,39 @@ type alias Credentials =
 
 {-| Checks if the user is currently authenticated.
 -}
-isLoggedIn : AuthState -> Bool
-isLoggedIn authState =
-    authState.loggedIn
+isLoggedIn : Model -> Bool
+isLoggedIn (Model model) =
+    model.authState.loggedIn
 
 
 {-| Obtains a list of permissions held by the current user.
 -}
-permissions : AuthState -> List String
-permissions authState =
+permissions : Model -> List String
+permissions (Model model) =
     []
 
 
 {-| Checks when the current users token will expire. The user may not have a token,
 or may not have one that expires at all, in which case Nothing will be returned.
 -}
-expiresAt : AuthState -> Maybe Date
-expiresAt authState =
+expiresAt : Model -> Maybe Date
+expiresAt (Model model) =
     Nothing
 
 
 {-| Obtains the current users username, provided they are logged in. If the user
 is not logged in, the empty string will be returned.
 -}
-username : AuthState -> String
-username authState =
+username : Model -> String
+username (Model model) =
     ""
 
 
 {-| Checks if the current user has a particular named permission.
 -}
-hasPermission : String -> AuthState -> Bool
-hasPermission permission authState =
-    List.member permission authState.permissions
+hasPermission : String -> Model -> Bool
+hasPermission permission (Model model) =
+    List.member permission model.authState.permissions
 
 
 {-| Requests that a login be performed.
@@ -133,40 +163,6 @@ unauthed =
     NotAuthed
 
 
-{-| Describes the events this controller responds to.
--}
-type Msg
-    = AuthApi Auth.Service.Msg
-    | LogIn Credentials
-    | Refresh
-    | LogOut
-    | NotAuthed
-    | Refreshed (Result.Result Http.Error Model.AuthResponse)
-
-
-{-| The complete state of this auth module.
--}
-type Model
-    = Model
-        { token : Maybe String
-        , decodedToken : Maybe Token
-        , refreshFrom : Maybe Date
-        , errorMsg : String
-        , authState : AuthState
-        , forwardLocation : String
-        , logoutLocation : String
-        , authApiRoot : String
-        , logonAttempted : Bool
-        }
-
-
-type alias Config =
-    { forwardLocation : String
-    , logoutLocation : String
-    , authApiRoot : String
-    }
-
-
 {-| The initial unauthed state.
 -}
 init : Config -> Model
@@ -182,13 +178,6 @@ init config =
         , authApiRoot = config.authApiRoot
         , logonAttempted = False
         }
-
-
-{-| Extracts the publicly visible auth state from the model.
--}
-extractAuthState : Model -> AuthState
-extractAuthState (Model model) =
-    model.authState
 
 
 {-| Describes the fields of a decoded JWT token.
@@ -449,7 +438,7 @@ update msg (Model model) =
                     ( Model model, Cmd.none )
 
                 Ok authResponse ->
-                    if isLoggedIn model.authState then
+                    if isLoggedIn (Model model) then
                         refreshResponse authResponse (Model model)
                     else
                         ( Model model, Cmd.none )
