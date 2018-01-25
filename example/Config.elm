@@ -15,9 +15,7 @@ import Json.Decode.Extra exposing ((|:), withDefault)
 {-| Defines the configuration that the content editor needs to run.
 -}
 type alias Config =
-    { applicationContextRoot : String
-    , apiRoot : String
-    , authRoot : String
+    { authRoot : String
     }
 
 
@@ -25,9 +23,7 @@ type alias Config =
 -}
 config : Config
 config =
-    { applicationContextRoot = "/auth/"
-    , apiRoot = "/auth/api/"
-    , authRoot = "/auth/"
+    { authRoot = "http://localhost:9077/auth/"
     }
 
 
@@ -36,13 +32,9 @@ config =
 configDecoder : Decoder Config
 configDecoder =
     (Decode.succeed
-        (\applicationContextRoot apiRoot authRoot ->
-            { applicationContextRoot = applicationContextRoot
-            , apiRoot = apiRoot
-            , authRoot = authRoot
+        (\authRoot ->
+            { authRoot = authRoot
             }
         )
     )
-        |: field "applicationContextRoot" Decode.string
-        |: field "apiRoot" Decode.string
         |: field "authRoot" Decode.string
