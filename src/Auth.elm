@@ -5,7 +5,6 @@ module Auth
         , init
         , logonAttempted
         , update
-        , updateForwardLocation
         , Credentials
         , isLoggedIn
         , permissions
@@ -49,8 +48,6 @@ type Model
         , refreshFrom : Maybe Date
         , errorMsg : String
         , authState : AuthState
-        , forwardLocation : String
-        , logoutLocation : String
         , authApiRoot : String
         , logonAttempted : Bool
         }
@@ -69,6 +66,11 @@ type alias AuthState =
     }
 
 
+type alias Config =
+    { authApiRoot : String
+    }
+
+
 {-| Describes the events this controller responds to.
 -}
 type Msg
@@ -78,13 +80,6 @@ type Msg
     | LogOut
     | NotAuthed
     | Refreshed (Result.Result Http.Error Model.AuthResponse)
-
-
-type alias Config =
-    { forwardLocation : String
-    , logoutLocation : String
-    , authApiRoot : String
-    }
 
 
 {-| Username and password based login credentials.
@@ -173,8 +168,6 @@ init config =
         , refreshFrom = Nothing
         , errorMsg = ""
         , authState = notAuthedState
-        , forwardLocation = config.forwardLocation
-        , logoutLocation = config.logoutLocation
         , authApiRoot = config.authApiRoot
         , logonAttempted = False
         }
@@ -324,8 +317,7 @@ loginResponse (Model.AuthResponse response) (Model model) =
     in
         ( model_
         , Cmd.batch
-            [ Navigation.newUrl model.forwardLocation
-            , delayedRefreshCmd model_
+            [ delayedRefreshCmd model_
             ]
         )
 
@@ -345,17 +337,13 @@ refreshResponse (Model.AuthResponse response) (Model model) =
                     , authState = authStateFromToken decodedToken
                 }
     in
-        ( model_
-        , Cmd.batch
-            [ delayedRefreshCmd model_
-            ]
-        )
+        ( model_, delayedRefreshCmd model_ )
 
 
 logoutResponse : Model -> ( Model, Cmd Msg )
 logoutResponse (Model model) =
     ( Model { model | token = Nothing, authState = authStateFromToken Nothing }
-    , Cmd.batch [ Navigation.newUrl model.logoutLocation ]
+    , Cmd.none
     )
 
 
@@ -429,7 +417,7 @@ update msg (Model model) =
                     , authState = authStateFromToken Nothing
                     , logonAttempted = False
                 }
-            , Cmd.batch [ Navigation.newUrl model.logoutLocation ]
+            , Cmd.none
             )
 
         Refreshed result ->
@@ -442,10 +430,3 @@ update msg (Model model) =
                         refreshResponse authResponse (Model model)
                     else
                         ( Model model, Cmd.none )
-
-
-{-| Updates the forward location.
--}
-updateForwardLocation : String -> Model -> Model
-updateForwardLocation location (Model model) =
-    Model { model | forwardLocation = location }

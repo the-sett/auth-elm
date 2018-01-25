@@ -56,9 +56,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { auth =
             Auth.init
-                { logoutLocation = "#welcome"
-                , forwardLocation = "#welcome"
-                , authApiRoot = config.authRoot
+                { authApiRoot = config.authRoot
                 }
       , session = initial
       }
