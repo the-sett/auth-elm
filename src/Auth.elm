@@ -301,22 +301,27 @@ loginResponse authApiRoot (Model.AuthResponse response) authState =
 
 refreshResponse : String -> Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
 refreshResponse authApiRoot (Model.AuthResponse response) authState =
-    -- let
-    --     decodedToken =
-    --         Maybe.map Jwt.decode response.token
-    --             |> Maybe.Extra.join
-    --
-    --     model_ =
-    --         Model
-    --             { model
-    --                 | token = response.token
-    --                 , refreshFrom = refreshTimeFromToken decodedToken
-    --                 , decodedToken = decodedToken
-    --                 , authState = authStateFromToken decodedToken
-    --             }
-    -- in
-    --     ( model_, delayedRefreshCmd model_ )
-    noop authState
+    case authState of
+        AuthState.Refreshing state ->
+            let
+                maybeToken =
+                    Jwt.decode response.token
+            in
+                case maybeToken of
+                    Nothing ->
+                        noop authState
+
+                    Just decodedToken ->
+                        let
+                            authModel =
+                                authModelFromToken response.token decodedToken
+                        in
+                            ( AuthState.toLoggedInWithAuthenticatedModel authModel state
+                            , delayedRefreshCmd authApiRoot authModel
+                            )
+
+        _ ->
+            noop authState
 
 
 logoutResponse : String -> AuthState -> ( AuthState, Cmd Msg )
@@ -348,6 +353,6 @@ tokenExpiryTask root refreshDate =
 authRequestFromCredentials : Credentials -> Model.AuthRequest
 authRequestFromCredentials credentials =
     Model.AuthRequest
-        { username = Just credentials.username
-        , password = Just credentials.password
+        { username = credentials.username
+        , password = credentials.password
         }
