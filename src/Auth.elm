@@ -204,7 +204,7 @@ innerUpdate : String -> Msg -> AuthState -> ( AuthState, Cmd Msg )
 innerUpdate authApiRoot msg authState =
     case msg of
         AuthApi apiMsg ->
-            Auth.Service.update callbacks apiMsg authState
+            Auth.Service.update (callbacks authApiRoot) apiMsg authState
 
         LogIn credentials ->
             case authState of
@@ -238,7 +238,7 @@ innerUpdate authApiRoot msg authState =
                     reset
 
                 Ok authResponse ->
-                    refreshResponse authResponse authState
+                    (refreshResponse authApiRoot) authResponse authState
 
 
 
@@ -266,17 +266,17 @@ refreshTimeFromToken token =
 -- Auth REST API calls.
 
 
-callbacks : Auth.Service.Callbacks AuthState Msg
-callbacks =
-    { login = loginResponse
-    , refresh = refreshResponse
-    , logout = logoutResponse
+callbacks : String -> Auth.Service.Callbacks AuthState Msg
+callbacks authApiRoot =
+    { login = loginResponse authApiRoot
+    , refresh = refreshResponse authApiRoot
+    , logout = logoutResponse authApiRoot
     , error = \_ -> \model -> ( model, Cmd.none )
     }
 
 
-loginResponse : Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
-loginResponse (Model.AuthResponse response) authState =
+loginResponse : String -> Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
+loginResponse authApiRoot (Model.AuthResponse response) authState =
     -- let
     --     decodedToken =
     --         Maybe.map Jwt.decode response.token
@@ -299,8 +299,8 @@ loginResponse (Model.AuthResponse response) authState =
     noop authState
 
 
-refreshResponse : Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
-refreshResponse (Model.AuthResponse response) authState =
+refreshResponse : String -> Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
+refreshResponse authApiRoot (Model.AuthResponse response) authState =
     -- let
     --     decodedToken =
     --         Maybe.map Jwt.decode response.token
@@ -319,8 +319,8 @@ refreshResponse (Model.AuthResponse response) authState =
     noop authState
 
 
-logoutResponse : AuthState -> ( AuthState, Cmd Msg )
-logoutResponse authState =
+logoutResponse : String -> AuthState -> ( AuthState, Cmd Msg )
+logoutResponse _ authState =
     reset
 
 
@@ -331,16 +331,10 @@ logoutResponse authState =
 -- Functions for building and executing the refresh cycle task.
 
 
-delayedRefreshCmd : AuthState -> Cmd Msg
-delayedRefreshCmd model =
-    -- case model.refreshFrom of
-    --     Nothing ->
-    --         Cmd.none
-    --
-    --     Just refreshDate ->
-    --         tokenExpiryTask model.authApiRoot refreshDate
-    --             |> Task.attempt (\result -> Refreshed result)
-    Cmd.none
+delayedRefreshCmd : String -> AuthenticatedModel -> Cmd Msg
+delayedRefreshCmd authApiRoot model =
+    tokenExpiryTask authApiRoot model.refreshFrom
+        |> Task.attempt (\result -> Refreshed result)
 
 
 tokenExpiryTask : String -> Date -> Task.Task Http.Error Model.AuthResponse
