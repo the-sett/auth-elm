@@ -197,6 +197,9 @@ innerUpdate authApiRoot msg authState =
     let
         noop =
             ( authState, Cmd.none )
+
+        reset =
+            ( AuthState.loggedOut, Cmd.none )
     in
         case msg of
             AuthApi apiMsg ->
@@ -226,20 +229,15 @@ innerUpdate authApiRoot msg authState =
                 ( authState, Auth.Service.invokeLogout authApiRoot AuthApi )
 
             NotAuthed ->
-                ( AuthState.loggedOut, Cmd.none )
+                reset
 
-            -- ( _, Refreshed result ) ->
-            --     case result of
-            --         Err _ ->
-            --             ( Model model, Cmd.none )
-            --
-            --         Ok authResponse ->
-            --             if isLoggedIn (Model model) then
-            --                 refreshResponse authResponse (Model model)
-            --             else
-            --                 ( Model model, Cmd.none )
-            _ ->
-                noop
+            Refreshed result ->
+                case result of
+                    Err _ ->
+                        reset
+
+                    Ok authResponse ->
+                        refreshResponse authResponse authState
 
 
 
