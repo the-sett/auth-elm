@@ -225,17 +225,9 @@ innerUpdate authApiRoot msg authState =
             LogOut ->
                 ( authState, Auth.Service.invokeLogout authApiRoot AuthApi )
 
-            --
-            -- ( _, NotAuthed ) ->
-            --     ( Model
-            --         { model
-            --             | token = Nothing
-            --             , authState = authStateFromToken Nothing
-            --             , logonAttempted = False
-            --         }
-            --     , Cmd.none
-            --     )
-            --
+            NotAuthed ->
+                ( AuthState.loggedOut, Cmd.none )
+
             -- ( _, Refreshed result ) ->
             --     case result of
             --         Err _ ->
