@@ -33,7 +33,7 @@ import Json.Decode.Extra exposing ((|:), withDefault)
 import Jwt exposing (Token)
 import Auth.Service
 import Model
-import AuthState exposing (AuthenticatedModel)
+import AuthState exposing (AuthState, AuthenticatedModel)
 
 
 -- The Auth API
@@ -103,7 +103,8 @@ the private state. The 'state' provides the state as visible to the consumer of
 this module.
 -}
 type alias Model =
-    { innerModel : Private
+    { authApiRoot : String
+    , innerModel : Private
     , state : AuthenticationState
     }
 
@@ -111,18 +112,12 @@ type alias Model =
 {-| Puts an opaque wrapper around the inner model to keep it private (unreadable).
 -}
 type Private
-    = Private InnerModel
-
-
-type alias InnerModel =
-    { authApiRoot : String
-    , authState : AuthState.AuthState
-    }
+    = Private AuthState.AuthState
 
 
 {-| Lifts the inner model out of the model.
 -}
-liftModel : Model -> InnerModel
+liftModel : Model -> AuthState.AuthState
 liftModel model =
     let
         (Private inner) =
@@ -133,8 +128,8 @@ liftModel model =
 
 {-| Lowers the inner model into the model.
 -}
-lowerModel : InnerModel -> Model
-lowerModel inner =
+lowerModel : AuthState -> Model -> Model
+lowerModel inner model =
     let
         extract : AuthState.State p { auth : AuthenticatedModel } -> { permissions : List String, username : String }
         extract state =
@@ -144,24 +139,24 @@ lowerModel inner =
             in
                 { permissions = authModel.auth.permissions, username = authModel.auth.username }
     in
-        case inner.authState of
+        case inner of
             AuthState.LoggedOut _ ->
-                { innerModel = Private inner, state = LoggedOut }
+                { model | innerModel = Private inner, state = LoggedOut }
 
             AuthState.Restoring _ ->
-                { innerModel = Private inner, state = LoggedOut }
+                { model | innerModel = Private inner, state = LoggedOut }
 
             AuthState.Attempting _ ->
-                { innerModel = Private inner, state = LoggedOut }
+                { model | innerModel = Private inner, state = LoggedOut }
 
             AuthState.Failed _ ->
-                { innerModel = Private inner, state = Failed }
+                { model | innerModel = Private inner, state = Failed }
 
             AuthState.LoggedIn state ->
-                { innerModel = Private inner, state = LoggedIn <| extract state }
+                { model | innerModel = Private inner, state = LoggedIn <| extract state }
 
             AuthState.Refreshing state ->
-                { innerModel = Private inner, state = LoggedIn <| extract state }
+                { model | innerModel = Private inner, state = LoggedIn <| extract state }
 
 
 {-| Describes the events this controller responds to.
@@ -179,10 +174,10 @@ type Msg
 -}
 init : Config -> Model
 init config =
-    lowerModel
-        { authApiRoot = config.authApiRoot
-        , authState = AuthState.loggedOut
-        }
+    { authApiRoot = config.authApiRoot
+    , innerModel = Private AuthState.loggedOut
+    , state = LoggedOut
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -191,14 +186,14 @@ update msg model =
         ( innerModel, cmds ) =
             liftModel model |> innerUpdate msg
     in
-        ( lowerModel innerModel, cmds )
+        ( lowerModel innerModel model, cmds )
 
 
 {-| Updates the auth state and triggers events needed to communicate with the
 auth server.
 -}
-innerUpdate : Msg -> InnerModel -> ( InnerModel, Cmd Msg )
-innerUpdate msg model =
+innerUpdate : Msg -> AuthState -> ( AuthState, Cmd Msg )
+innerUpdate msg authState =
     -- case msg of
     --     AuthApi action_ ->
     --         Auth.Service.update callbacks action_ (Model model)
@@ -241,11 +236,11 @@ innerUpdate msg model =
     --                     ( Model model, Cmd.none )
     let
         noop =
-            ( model, Cmd.none )
+            ( authState, Cmd.none )
     in
-        case ( model.authState, msg ) of
+        case ( authState, msg ) of
             ( _, AuthApi apiMsg ) ->
-                Auth.Service.update callbacks apiMsg model
+                Auth.Service.update callbacks apiMsg authState
 
             _ ->
                 noop
@@ -276,7 +271,7 @@ refreshTimeFromToken token =
 -- Auth REST API calls.
 
 
-callbacks : Auth.Service.Callbacks InnerModel Msg
+callbacks : Auth.Service.Callbacks AuthState Msg
 callbacks =
     { login = loginResponse
     , refresh = refreshResponse
@@ -285,7 +280,7 @@ callbacks =
     }
 
 
-loginResponse : Model.AuthResponse -> InnerModel -> ( InnerModel, Cmd Msg )
+loginResponse : Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
 loginResponse (Model.AuthResponse response) model =
     -- let
     --     decodedToken =
@@ -309,7 +304,7 @@ loginResponse (Model.AuthResponse response) model =
     ( model, Cmd.none )
 
 
-refreshResponse : Model.AuthResponse -> InnerModel -> ( InnerModel, Cmd Msg )
+refreshResponse : Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
 refreshResponse (Model.AuthResponse response) model =
     -- let
     --     decodedToken =
@@ -329,9 +324,9 @@ refreshResponse (Model.AuthResponse response) model =
     ( model, Cmd.none )
 
 
-logoutResponse : InnerModel -> ( InnerModel, Cmd Msg )
+logoutResponse : AuthState -> ( AuthState, Cmd Msg )
 logoutResponse model =
-    ( { model | authState = AuthState.loggedOut }, Cmd.none )
+    ( AuthState.loggedOut, Cmd.none )
 
 
 
@@ -341,7 +336,7 @@ logoutResponse model =
 -- Functions for building and executing the refresh cycle task.
 
 
-delayedRefreshCmd : InnerModel -> Cmd Msg
+delayedRefreshCmd : AuthState -> Cmd Msg
 delayedRefreshCmd model =
     -- case model.refreshFrom of
     --     Nothing ->
