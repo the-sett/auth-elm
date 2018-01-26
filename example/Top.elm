@@ -12,7 +12,7 @@ import Authenticated
 import Html exposing (Html, div)
 import Html.Attributes
 import Config exposing (config)
-import Auth
+import Auth exposing (AuthenticationState(..))
 import Maybe.Extra
 import UpdateUtils exposing (lift, message)
 import TopState as TopState
@@ -105,31 +105,21 @@ update action model =
 updateSessionFromAuthState : Model -> Model
 updateSessionFromAuthState model =
     let
-        isAuthenticated =
-            Debug.log "isAuthenticated" <|
-                Auth.isLoggedIn model.auth
-
-        logonAttempted =
-            Debug.log "logonAttempted" <|
-                Auth.logonAttempted model.auth
-
         session =
-            case ( model.session, isAuthenticated, logonAttempted ) of
-                ( Welcome state, True, _ ) ->
+            case ( model.session, model.auth.state ) of
+                ( Welcome state, LoggedIn _ ) ->
                     toAuthenticated state
 
-                ( Welcome state, False, True ) ->
+                ( Welcome state, Failed ) ->
                     toFailedAuth state
 
-                -- else if not refreshAttempted then
-                --     ( Initial, Cmd.none )
-                ( FailedAuth state, _, _ ) ->
+                ( FailedAuth state, _ ) ->
                     toWelcome state
 
-                ( Initial state, _, _ ) ->
+                ( Initial state, _ ) ->
                     toWelcomeWithLoginModel Login.init state
 
-                ( _, _, _ ) ->
+                ( _, _ ) ->
                     model.session
     in
         { model | session = session }
