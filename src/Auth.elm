@@ -184,7 +184,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         ( innerModel, cmds ) =
-            liftModel model |> innerUpdate msg
+            liftModel model |> innerUpdate model.authApiRoot msg
     in
         ( lowerModel innerModel model, cmds )
 
@@ -192,56 +192,52 @@ update msg model =
 {-| Updates the auth state and triggers events needed to communicate with the
 auth server.
 -}
-innerUpdate : Msg -> AuthState -> ( AuthState, Cmd Msg )
-innerUpdate msg authState =
-    -- case msg of
-    --     AuthApi action_ ->
-    --         Auth.Service.update callbacks action_ (Model model)
-    --
-    --     LogIn credentials ->
-    --         ( Model
-    --             { model
-    --                 | token = Nothing
-    --                 , authState = authStateFromToken Nothing
-    --                 , logonAttempted = True
-    --             }
-    --         , Auth.Service.invokeLogin model.authApiRoot AuthApi (authRequestFromCredentials credentials)
-    --         )
-    --
-    --     Refresh ->
-    --         ( Model { model | logonAttempted = False }, Auth.Service.invokeRefresh model.authApiRoot AuthApi )
-    --
-    --     LogOut ->
-    --         ( Model { model | logonAttempted = False }, Auth.Service.invokeLogout model.authApiRoot AuthApi )
-    --
-    --     NotAuthed ->
-    --         ( Model
-    --             { model
-    --                 | token = Nothing
-    --                 , authState = authStateFromToken Nothing
-    --                 , logonAttempted = False
-    --             }
-    --         , Cmd.none
-    --         )
-    --
-    --     Refreshed result ->
-    --         case result of
-    --             Err _ ->
-    --                 ( Model model, Cmd.none )
-    --
-    --             Ok authResponse ->
-    --                 if isLoggedIn (Model model) then
-    --                     refreshResponse authResponse (Model model)
-    --                 else
-    --                     ( Model model, Cmd.none )
+innerUpdate : String -> Msg -> AuthState -> ( AuthState, Cmd Msg )
+innerUpdate authApiRoot msg authState =
     let
         noop =
             ( authState, Cmd.none )
     in
-        case ( authState, msg ) of
-            ( _, AuthApi apiMsg ) ->
+        case msg of
+            AuthApi apiMsg ->
                 Auth.Service.update callbacks apiMsg authState
 
+            LogIn credentials ->
+                case authState of
+                    AuthState.LoggedOut state ->
+                        ( AuthState.toAttempting state
+                        , Auth.Service.invokeLogin authApiRoot AuthApi (authRequestFromCredentials credentials)
+                        )
+
+                    _ ->
+                        noop
+
+            -- ( _, Refresh ) ->
+            --     ( Model { model | logonAttempted = False }, Auth.Service.invokeRefresh model.authApiRoot AuthApi )
+            --
+            -- ( _, LogOut ) ->
+            --     ( Model { model | logonAttempted = False }, Auth.Service.invokeLogout model.authApiRoot AuthApi )
+            --
+            -- ( _, NotAuthed ) ->
+            --     ( Model
+            --         { model
+            --             | token = Nothing
+            --             , authState = authStateFromToken Nothing
+            --             , logonAttempted = False
+            --         }
+            --     , Cmd.none
+            --     )
+            --
+            -- ( _, Refreshed result ) ->
+            --     case result of
+            --         Err _ ->
+            --             ( Model model, Cmd.none )
+            --
+            --         Ok authResponse ->
+            --             if isLoggedIn (Model model) then
+            --                 refreshResponse authResponse (Model model)
+            --             else
+            --                 ( Model model, Cmd.none )
             _ ->
                 noop
 
