@@ -212,8 +212,16 @@ innerUpdate authApiRoot msg authState =
                     _ ->
                         noop
 
-            -- ( _, Refresh ) ->
-            --     ( Model { model | logonAttempted = False }, Auth.Service.invokeRefresh model.authApiRoot AuthApi )
+            Refresh ->
+                case authState of
+                    AuthState.LoggedIn state ->
+                        ( AuthState.toRefreshing state
+                        , Auth.Service.invokeRefresh authApiRoot AuthApi
+                        )
+
+                    _ ->
+                        noop
+
             --
             -- ( _, LogOut ) ->
             --     ( Model { model | logonAttempted = False }, Auth.Service.invokeLogout model.authApiRoot AuthApi )
