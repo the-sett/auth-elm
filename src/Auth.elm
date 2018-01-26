@@ -331,13 +331,13 @@ refreshResponse (Model.AuthResponse response) model =
 
 logoutResponse : InnerModel -> ( InnerModel, Cmd Msg )
 logoutResponse model =
-    -- ( Model { model | token = Nothing, authState = authStateFromToken Nothing }
-    -- , Cmd.none
-    -- )
-    ( model, Cmd.none )
+    ( { model | authState = AuthState.loggedOut }, Cmd.none )
 
 
 
+-- ( Model { model | token = Nothing, authState = authStateFromToken Nothing }
+-- , Cmd.none
+-- )
 -- Functions for building and executing the refresh cycle task.
 
 

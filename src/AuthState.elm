@@ -24,13 +24,16 @@ type alias AuthenticatedModel =
     }
 
 
+{-| Note that the LoggedOut state is effectively a reset on the state machine,
+and is allowed from any state, so it is not marked explcitly here.
+-}
 type AuthState
     = LoggedOut (State { restoring : Allowed, attempting : Allowed } {})
-    | Restoring (State { loggedIn : Allowed, loggedOut : Allowed } {})
+    | Restoring (State { loggedIn : Allowed } {})
     | Attempting (State { loggedIn : Allowed, failed : Allowed } {})
-    | Failed (State { loggedOut : Allowed } {})
-    | LoggedIn (State { loggedOut : Allowed, refreshing : Allowed } { auth : AuthenticatedModel })
-    | Refreshing (State { loggedIn : Allowed, loggedOut : Allowed } { auth : AuthenticatedModel })
+    | Failed (State {} {})
+    | LoggedIn (State { refreshing : Allowed } { auth : AuthenticatedModel })
+    | Refreshing (State { loggedIn : Allowed } { auth : AuthenticatedModel })
 
 
 
@@ -87,11 +90,6 @@ mapAuthenticatedModel func state =
 
 -- State transition functions that can be applied only to states that are permitted
 -- to make a transition.
-
-
-toLoggedOut : State { a | loggedOut : Allowed } m -> AuthState
-toLoggedOut _ =
-    loggedOut
 
 
 toRestoring : State { a | restoring : Allowed } m -> AuthState
