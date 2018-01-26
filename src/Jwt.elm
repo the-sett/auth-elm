@@ -3,12 +3,12 @@ module Jwt
         ( JwtError(..)
         , Token
         , decode
+        , decodeWithErrors
         , isExpired
         )
 
 import Date exposing (Date)
 import Base64
-import String
 import Time exposing (Time)
 import Json.Decode as Decode exposing (field, Value, Decoder)
 import Json.Decode.Extra exposing ((|:), withDefault)
@@ -33,14 +33,24 @@ type alias Token =
     }
 
 
-decode : Maybe String -> Maybe Token
-decode maybeToken =
-    case maybeToken of
-        Nothing ->
-            Nothing
+decode : String -> Maybe Token
+decode token =
+    Result.toMaybe <| decodeWithErrors token
 
-        Just token ->
-            Result.toMaybe <| extractAndDecodeToken tokenDecoder token
+
+decodeWithErrors : String -> Result JwtError Token
+decodeWithErrors token =
+    extractAndDecodeToken tokenDecoder token
+
+
+isExpired : Time -> String -> Bool
+isExpired now token =
+    case extractAndDecodeToken (field "exp" Decode.float) token of
+        Result.Ok exp ->
+            now > (exp * 1000)
+
+        Result.Err _ ->
+            True
 
 
 tokenDecoder : Decoder Token
@@ -102,16 +112,6 @@ extractAndDecodeToken dec s =
 
             _ ->
                 Result.Err <| TokenProcessingError "Token has invalid shape"
-
-
-isExpired : Time -> String -> Bool
-isExpired now token =
-    case extractAndDecodeToken (field "exp" Decode.float) token of
-        Result.Ok exp ->
-            now > (exp * 1000)
-
-        Result.Err _ ->
-            True
 
 
 unurl : String -> String

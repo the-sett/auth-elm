@@ -251,7 +251,8 @@ loginResponse : Model.AuthResponse -> Model -> ( Model, Cmd Msg )
 loginResponse (Model.AuthResponse response) (Model model) =
     let
         decodedToken =
-            Jwt.decode response.token
+            Maybe.map Jwt.decode response.token
+                |> Maybe.Extra.join
 
         model_ =
             Model
@@ -273,7 +274,8 @@ refreshResponse : Model.AuthResponse -> Model -> ( Model, Cmd Msg )
 refreshResponse (Model.AuthResponse response) (Model model) =
     let
         decodedToken =
-            Jwt.decode response.token
+            Maybe.map Jwt.decode response.token
+                |> Maybe.Extra.join
 
         model_ =
             Model
