@@ -26,7 +26,7 @@ type alias Token =
     { sub : String
     , iss : Maybe String
     , aud : Maybe String
-    , exp : Maybe Date
+    , exp : Date
     , iat : Maybe Date
     , jti : Maybe String
     , scopes : List String
@@ -70,11 +70,9 @@ tokenDecoder =
         |: (Decode.field "sub" Decode.string)
         |: Decode.maybe (Decode.field "iss" Decode.string)
         |: Decode.maybe (Decode.field "aud" Decode.string)
-        |: Decode.maybe
-            (Decode.map
-                (Date.fromTime << toFloat << ((*) 1000))
-                (Decode.field "exp" Decode.int)
-            )
+        |: Decode.map
+            (Date.fromTime << toFloat << ((*) 1000))
+            (Decode.field "exp" Decode.int)
         |: Decode.maybe
             (Decode.map
                 (Date.fromTime << toFloat << ((*) 1000))

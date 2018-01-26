@@ -62,7 +62,7 @@ interested in.
 type alias AuthState =
     { loggedIn : Bool
     , permissions : List String
-    , expiresAt : Maybe Date
+    , expiresAt : Date
     , username : String
     }
 
@@ -181,7 +181,7 @@ init config =
 notAuthedState =
     { loggedIn = False
     , permissions = []
-    , expiresAt = Nothing
+    , expiresAt = Date.fromTime 0
     , username = ""
     }
 
@@ -208,7 +208,7 @@ refreshTimeFromToken : Maybe Token -> Maybe Date
 refreshTimeFromToken maybeToken =
     let
         maybeDate =
-            Maybe.map (\token -> token.exp) maybeToken |> Maybe.Extra.join
+            Maybe.map (\token -> token.exp) maybeToken
     in
         Maybe.map (\date -> (Date.toTime date) - 30 * Time.second |> Date.fromTime) maybeDate
 
