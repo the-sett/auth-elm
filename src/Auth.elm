@@ -255,13 +255,9 @@ innerUpdate msg model =
 {--Helper functions over the auth model. --}
 
 
-refreshTimeFromToken : Maybe Token -> Maybe Date
-refreshTimeFromToken maybeToken =
-    let
-        maybeDate =
-            Maybe.map (\token -> token.exp) maybeToken
-    in
-        Maybe.map (\date -> (Date.toTime date) - 30 * Time.second |> Date.fromTime) maybeDate
+refreshTimeFromToken : Token -> Date
+refreshTimeFromToken token =
+    (Date.toTime token.exp) - 30 * Time.second |> Date.fromTime
 
 
 
