@@ -242,7 +242,7 @@ innerUpdate authApiRoot msg authState =
 
 
 
-{--Helper functions over the auth model. --}
+{- Helper functions over the auth model. -}
 
 
 refreshTimeFromToken : Token -> Date
@@ -250,19 +250,18 @@ refreshTimeFromToken token =
     (Date.toTime token.exp) - 30 * Time.second |> Date.fromTime
 
 
+authModelFromToken : String -> Token -> AuthenticatedModel
+authModelFromToken rawToken token =
+    { token = rawToken
+    , decodedToken = token
+    , permissions = token.scopes
+    , expiresAt = token.exp
+    , username = token.sub
+    , refreshFrom = refreshTimeFromToken token
+    }
 
--- authStateFromToken : Maybe Token -> AuthState
--- authStateFromToken maybeToken =
---     case maybeToken of
---         Nothing ->
---             notAuthedState
---
---         Just token ->
---             { loggedIn = True
---             , permissions = token.scopes
---             , expiresAt = token.exp
---             , username = token.sub
---             }
+
+
 -- Auth REST API calls.
 
 
@@ -325,9 +324,6 @@ logoutResponse _ authState =
 
 
 
--- ( Model { model | token = Nothing, authState = authStateFromToken Nothing }
--- , Cmd.none
--- )
 -- Functions for building and executing the refresh cycle task.
 
 
@@ -354,7 +350,3 @@ authRequestFromCredentials credentials =
         { username = Just credentials.username
         , password = Just credentials.password
         }
-
-
-
--- Event handler.
