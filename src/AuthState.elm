@@ -1,6 +1,17 @@
 module AuthState exposing (..)
 
-import StateMachine exposing (..)
+import Date exposing (Date)
+import Jwt exposing (Token)
+import StateMachine exposing (State(..), Allowed, map)
+
+
+untag : State tag value -> value
+untag =
+    StateMachine.untag
+
+
+type alias State p m =
+    StateMachine.State p m
 
 
 type alias AuthenticatedModel =
@@ -47,12 +58,12 @@ failed =
 
 loggedIn : AuthenticatedModel -> AuthState
 loggedIn model =
-    State model |> LoggedIn
+    State { auth = model } |> LoggedIn
 
 
 refreshing : AuthenticatedModel -> AuthState
 refreshing model =
-    State model |> AuthenticatedModel
+    State { auth = model } |> Refreshing
 
 
 

@@ -34,9 +34,10 @@ import Result
 import Json.Encode as Encode
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Extra exposing ((|:), withDefault)
-import Jwt
+import Jwt exposing (Token)
 import Auth.Service
 import Model
+import AuthState
 
 
 {-| The complete state of this auth module.
@@ -173,19 +174,6 @@ init config =
         }
 
 
-{-| Describes the fields of a decoded JWT token.
--}
-type alias Token =
-    { sub : String
-    , iss : Maybe String
-    , aud : Maybe String
-    , exp : Maybe Date
-    , iat : Maybe Date
-    , jti : Maybe String
-    , scopes : List String
-    }
-
-
 
 {--Helper functions over the auth model. --}
 
@@ -196,37 +184,6 @@ notAuthedState =
     , expiresAt = Nothing
     , username = ""
     }
-
-
-tokenDecoder : Decoder Token
-tokenDecoder =
-    (Decode.succeed
-        (\sub iss aud exp iat jti scopes ->
-            { sub = sub
-            , iss = iss
-            , aud = aud
-            , exp = exp
-            , iat = iat
-            , jti = jti
-            , scopes = scopes
-            }
-        )
-    )
-        |: (Decode.field "sub" Decode.string)
-        |: Decode.maybe (Decode.field "iss" Decode.string)
-        |: Decode.maybe (Decode.field "aud" Decode.string)
-        |: Decode.maybe
-            (Decode.map
-                (Date.fromTime << toFloat << ((*) 1000))
-                (Decode.field "exp" Decode.int)
-            )
-        |: Decode.maybe
-            (Decode.map
-                (Date.fromTime << toFloat << ((*) 1000))
-                (Decode.field "iat" Decode.int)
-            )
-        |: Decode.maybe (Decode.field "jti" Decode.string)
-        |: (Decode.field "scopes" (Decode.list Decode.string))
 
 
 credentialsDecoder : Decoder Credentials
@@ -240,16 +197,6 @@ credentialsDecoder =
     )
         |: (Decode.field "username" Decode.string)
         |: (Decode.field "password" Decode.string)
-
-
-decodeToken : Maybe String -> Maybe Token
-decodeToken maybeToken =
-    case maybeToken of
-        Nothing ->
-            Nothing
-
-        Just token ->
-            Result.toMaybe <| Jwt.decodeToken tokenDecoder token
 
 
 decodeCredentials : Encode.Value -> Maybe Credentials
@@ -304,7 +251,7 @@ loginResponse : Model.AuthResponse -> Model -> ( Model, Cmd Msg )
 loginResponse (Model.AuthResponse response) (Model model) =
     let
         decodedToken =
-            decodeToken response.token
+            Jwt.decode response.token
 
         model_ =
             Model
@@ -326,7 +273,7 @@ refreshResponse : Model.AuthResponse -> Model -> ( Model, Cmd Msg )
 refreshResponse (Model.AuthResponse response) (Model model) =
     let
         decodedToken =
-            decodeToken response.token
+            Jwt.decode response.token
 
         model_ =
             Model

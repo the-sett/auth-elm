@@ -1,9 +1,17 @@
-module Jwt exposing (JwtError(..), decodeToken, isExpired)
+module Jwt
+    exposing
+        ( JwtError(..)
+        , Token
+        , decode
+        , isExpired
+        )
 
+import Date exposing (Date)
 import Base64
 import String
 import Time exposing (Time)
-import Json.Decode as Json exposing (field, Value)
+import Json.Decode as Decode exposing (field, Value, Decoder)
+import Json.Decode.Extra exposing ((|:), withDefault)
 
 
 type JwtError
@@ -12,8 +20,62 @@ type JwtError
     | TokenDecodeError String
 
 
-decodeToken : Json.Decoder a -> String -> Result JwtError a
-decodeToken dec s =
+{-| Describes the fields of a decoded JWT token.
+-}
+type alias Token =
+    { sub : String
+    , iss : Maybe String
+    , aud : Maybe String
+    , exp : Maybe Date
+    , iat : Maybe Date
+    , jti : Maybe String
+    , scopes : List String
+    }
+
+
+decode : Maybe String -> Maybe Token
+decode maybeToken =
+    case maybeToken of
+        Nothing ->
+            Nothing
+
+        Just token ->
+            Result.toMaybe <| extractAndDecodeToken tokenDecoder token
+
+
+tokenDecoder : Decoder Token
+tokenDecoder =
+    (Decode.succeed
+        (\sub iss aud exp iat jti scopes ->
+            { sub = sub
+            , iss = iss
+            , aud = aud
+            , exp = exp
+            , iat = iat
+            , jti = jti
+            , scopes = scopes
+            }
+        )
+    )
+        |: (Decode.field "sub" Decode.string)
+        |: Decode.maybe (Decode.field "iss" Decode.string)
+        |: Decode.maybe (Decode.field "aud" Decode.string)
+        |: Decode.maybe
+            (Decode.map
+                (Date.fromTime << toFloat << ((*) 1000))
+                (Decode.field "exp" Decode.int)
+            )
+        |: Decode.maybe
+            (Decode.map
+                (Date.fromTime << toFloat << ((*) 1000))
+                (Decode.field "iat" Decode.int)
+            )
+        |: Decode.maybe (Decode.field "jti" Decode.string)
+        |: (Decode.field "scopes" (Decode.list Decode.string))
+
+
+extractAndDecodeToken : Decode.Decoder a -> String -> Result JwtError a
+extractAndDecodeToken dec s =
     let
         f1 =
             String.split "." <| unurl s
@@ -28,7 +90,7 @@ decodeToken dec s =
             _ :: (Result.Ok encBody) :: _ :: [] ->
                 case Base64.decode encBody of
                     Result.Ok body ->
-                        case Json.decodeString dec (Debug.log "jwt" body) of
+                        case Decode.decodeString dec (Debug.log "jwt" body) of
                             Result.Ok x ->
                                 Result.Ok x
 
@@ -44,7 +106,7 @@ decodeToken dec s =
 
 isExpired : Time -> String -> Bool
 isExpired now token =
-    case decodeToken (field "exp" Json.float) token of
+    case extractAndDecodeToken (field "exp" Decode.float) token of
         Result.Ok exp ->
             now > (exp * 1000)
 
