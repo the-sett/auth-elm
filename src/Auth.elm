@@ -276,26 +276,27 @@ callbacks authApiRoot =
 
 loginResponse : String -> Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
 loginResponse authApiRoot (Model.AuthResponse response) authState =
-    -- let
-    --     decodedToken =
-    --         Maybe.map Jwt.decode response.token
-    --             |> Maybe.Extra.join
-    --
-    --     model_ =
-    --         Model
-    --             { model
-    --                 | token = response.token
-    --                 , refreshFrom = refreshTimeFromToken decodedToken
-    --                 , decodedToken = decodedToken
-    --                 , authState = authStateFromToken decodedToken
-    --             }
-    -- in
-    --     ( model_
-    --     , Cmd.batch
-    --         [ delayedRefreshCmd model_
-    --         ]
-    --     )
-    noop authState
+    case authState of
+        AuthState.Attempting state ->
+            let
+                maybeToken =
+                    Jwt.decode response.token
+            in
+                case maybeToken of
+                    Nothing ->
+                        noop authState
+
+                    Just decodedToken ->
+                        let
+                            authModel =
+                                authModelFromToken response.token decodedToken
+                        in
+                            ( AuthState.toLoggedInWithAuthenticatedModel authModel state
+                            , delayedRefreshCmd authApiRoot authModel
+                            )
+
+        _ ->
+            noop authState
 
 
 refreshResponse : String -> Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
