@@ -1,4 +1,21 @@
-module AuthState exposing (..)
+module AuthState
+    exposing
+        ( AuthState(..)
+        , AuthenticatedModel
+          -- Accessing the inner model
+        , State
+        , untag
+          -- Constructors
+        , loggedOut
+          -- Map
+        , mapAuthenticatedModel
+          -- State transitions
+        , toRestoring
+        , toAttempting
+        , toFailed
+        , toLoggedInWithAuthenticatedModel
+        , toRefreshing
+        )
 
 import Date exposing (Date)
 import Jwt exposing (Token)
