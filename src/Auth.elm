@@ -8,7 +8,7 @@ module Auth
         , unauthed
         , Model
         , Msg
-        , AuthenticationState
+        , AuthenticationState(..)
         , init
         , update
         )
