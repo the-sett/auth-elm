@@ -1,20 +1,20 @@
 module Auth
     exposing
-        ( Model
-        , Msg
-        , init
-        , logonAttempted
-        , update
+        ( Config
         , Credentials
         , isLoggedIn
         , permissions
-        , expiresAt
         , username
         , hasPermission
         , login
         , refresh
         , logout
         , unauthed
+        , Model
+        , Msg
+        , AuthEvent
+        , init
+        , update
         )
 
 {-| Maintains the auth state and follows the TEA pattern to provide a stateful auth
@@ -37,50 +37,15 @@ import Json.Decode.Extra exposing ((|:), withDefault)
 import Jwt exposing (Token)
 import Auth.Service
 import Model
-import AuthState
+import AuthState exposing (AuthenticatedModel)
 
 
-{-| The complete state of this auth module.
--}
-type Model
-    = Model
-        { token : Maybe String
-        , decodedToken : Maybe Token
-        , refreshFrom : Maybe Date
-        , errorMsg : String
-        , authState : AuthState
-        , authApiRoot : String
-        , logonAttempted : Bool
-        }
-
-
-{-| A sub-section of the auth module state describing whether or not the user
-is logged in, what permissions they have, and when their auth token will expire.
-This is the part of the auth state that most consumers of the Auth module are
-interested in.
--}
-type alias AuthState =
-    { loggedIn : Bool
-    , permissions : List String
-    , expiresAt : Date
-    , username : String
-    }
+-- The Auth API
 
 
 type alias Config =
     { authApiRoot : String
     }
-
-
-{-| Describes the events this controller responds to.
--}
-type Msg
-    = AuthApi Auth.Service.Msg
-    | LogIn Credentials
-    | Refresh
-    | LogOut
-    | NotAuthed
-    | Refreshed (Result.Result Http.Error Model.AuthResponse)
 
 
 {-| Username and password based login credentials.
@@ -95,22 +60,24 @@ type alias Credentials =
 -}
 isLoggedIn : Model -> Bool
 isLoggedIn (Model model) =
-    model.authState.loggedIn
+    case model.authState of
+        AuthState.LoggedIn _ ->
+            True
+
+        _ ->
+            False
 
 
 {-| Obtains a list of permissions held by the current user.
 -}
 permissions : Model -> List String
 permissions (Model model) =
-    []
+    case model.authState of
+        AuthState.LoggedIn state ->
+            AuthState.untag state |> .auth |> .permissions
 
-
-{-| Checks when the current users token will expire. The user may not have a token,
-or may not have one that expires at all, in which case Nothing will be returned.
--}
-expiresAt : Model -> Maybe Date
-expiresAt (Model model) =
-    Nothing
+        _ ->
+            []
 
 
 {-| Obtains the current users username, provided they are logged in. If the user
@@ -118,14 +85,19 @@ is not logged in, the empty string will be returned.
 -}
 username : Model -> String
 username (Model model) =
-    ""
+    case model.authState of
+        AuthState.LoggedIn state ->
+            AuthState.untag state |> .auth |> .username
+
+        _ ->
+            ""
 
 
 {-| Checks if the current user has a particular named permission.
 -}
 hasPermission : String -> Model -> Bool
-hasPermission permission (Model model) =
-    List.member permission model.authState.permissions
+hasPermission permission model =
+    List.member permission <| permissions model
 
 
 {-| Requests that a login be performed.
@@ -151,7 +123,7 @@ logout =
     LogOut
 
 
-{-| Requests that the auth state be cleared to the unauthed state. Usually in
+{-| Requests that the auth state be cleared to the LoggedOut state. Usually in
 response to receiving a 401 or 403 error from a server.
 -}
 unauthed : Msg
@@ -159,49 +131,118 @@ unauthed =
     NotAuthed
 
 
+{-| Auth events of interest to the consumer.
+-}
+type AuthEvent
+    = AuthFailed
+    | LoggedOut
+    | LoggedIn
+
+
+
+-- TEA encapsulation of this module.
+
+
+{-| The complete state of this auth module.
+-}
+type Model
+    = Model
+        { authApiRoot : String
+        , authState : AuthState.AuthState
+        , event : Maybe AuthEvent
+        }
+
+
+{-| Describes the events this controller responds to.
+-}
+type Msg
+    = AuthApi Auth.Service.Msg
+    | LogIn Credentials
+    | Refresh
+    | LogOut
+    | NotAuthed
+    | Refreshed (Result.Result Http.Error Model.AuthResponse)
+
+
 {-| The initial unauthed state.
 -}
 init : Config -> Model
 init config =
     Model
-        { token = Nothing
-        , decodedToken = Nothing
-        , refreshFrom = Nothing
-        , errorMsg = ""
-        , authState = notAuthedState
-        , authApiRoot = config.authApiRoot
-        , logonAttempted = False
+        { authApiRoot = config.authApiRoot
+        , authState = AuthState.loggedOut
+        , event = Nothing
         }
+
+
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe AuthEvent )
+update msg (Model model) =
+    let
+        ( Model updatedModel, cmds ) =
+            innerUpdate msg (Model model)
+    in
+        ( Model updatedModel, cmds, updatedModel.event )
+
+
+{-| Updates the auth state and triggers events needed to communicate with the
+auth server.
+-}
+innerUpdate : Msg -> Model -> ( Model, Cmd Msg )
+innerUpdate msg (Model model) =
+    -- case msg of
+    --     AuthApi action_ ->
+    --         Auth.Service.update callbacks action_ (Model model)
+    --
+    --     LogIn credentials ->
+    --         ( Model
+    --             { model
+    --                 | token = Nothing
+    --                 , authState = authStateFromToken Nothing
+    --                 , logonAttempted = True
+    --             }
+    --         , Auth.Service.invokeLogin model.authApiRoot AuthApi (authRequestFromCredentials credentials)
+    --         )
+    --
+    --     Refresh ->
+    --         ( Model { model | logonAttempted = False }, Auth.Service.invokeRefresh model.authApiRoot AuthApi )
+    --
+    --     LogOut ->
+    --         ( Model { model | logonAttempted = False }, Auth.Service.invokeLogout model.authApiRoot AuthApi )
+    --
+    --     NotAuthed ->
+    --         ( Model
+    --             { model
+    --                 | token = Nothing
+    --                 , authState = authStateFromToken Nothing
+    --                 , logonAttempted = False
+    --             }
+    --         , Cmd.none
+    --         )
+    --
+    --     Refreshed result ->
+    --         case result of
+    --             Err _ ->
+    --                 ( Model model, Cmd.none )
+    --
+    --             Ok authResponse ->
+    --                 if isLoggedIn (Model model) then
+    --                     refreshResponse authResponse (Model model)
+    --                 else
+    --                     ( Model model, Cmd.none )
+    let
+        noop =
+            ( Model { model | event = Nothing }, Cmd.none )
+    in
+        case ( model.authState, msg ) of
+            ( _, AuthApi apiMsg ) ->
+                Auth.Service.update callbacks apiMsg (Model model)
+
+            _ ->
+                noop
 
 
 
 {--Helper functions over the auth model. --}
-
-
-notAuthedState =
-    { loggedIn = False
-    , permissions = []
-    , expiresAt = Date.fromTime 0
-    , username = ""
-    }
-
-
-credentialsDecoder : Decoder Credentials
-credentialsDecoder =
-    (Decode.succeed
-        (\username password ->
-            { username = username
-            , password = password
-            }
-        )
-    )
-        |: (Decode.field "username" Decode.string)
-        |: (Decode.field "password" Decode.string)
-
-
-decodeCredentials : Encode.Value -> Maybe Credentials
-decodeCredentials val =
-    Decode.decodeValue credentialsDecoder val |> Result.toMaybe
 
 
 refreshTimeFromToken : Maybe Token -> Maybe Date
@@ -213,28 +254,19 @@ refreshTimeFromToken maybeToken =
         Maybe.map (\date -> (Date.toTime date) - 30 * Time.second |> Date.fromTime) maybeDate
 
 
-authStateFromToken : Maybe Token -> AuthState
-authStateFromToken maybeToken =
-    case maybeToken of
-        Nothing ->
-            notAuthedState
 
-        Just token ->
-            { loggedIn = True
-            , permissions = token.scopes
-            , expiresAt = token.exp
-            , username = token.sub
-            }
-
-
-{-| Reports whether a logon has been attempted.
--}
-logonAttempted : Model -> Bool
-logonAttempted (Model model) =
-    model.logonAttempted
-
-
-
+-- authStateFromToken : Maybe Token -> AuthState
+-- authStateFromToken maybeToken =
+--     case maybeToken of
+--         Nothing ->
+--             notAuthedState
+--
+--         Just token ->
+--             { loggedIn = True
+--             , permissions = token.scopes
+--             , expiresAt = token.exp
+--             , username = token.sub
+--             }
 -- Auth REST API calls.
 
 
@@ -249,51 +281,54 @@ callbacks =
 
 loginResponse : Model.AuthResponse -> Model -> ( Model, Cmd Msg )
 loginResponse (Model.AuthResponse response) (Model model) =
-    let
-        decodedToken =
-            Maybe.map Jwt.decode response.token
-                |> Maybe.Extra.join
-
-        model_ =
-            Model
-                { model
-                    | token = response.token
-                    , refreshFrom = refreshTimeFromToken decodedToken
-                    , decodedToken = decodedToken
-                    , authState = authStateFromToken decodedToken
-                }
-    in
-        ( model_
-        , Cmd.batch
-            [ delayedRefreshCmd model_
-            ]
-        )
+    -- let
+    --     decodedToken =
+    --         Maybe.map Jwt.decode response.token
+    --             |> Maybe.Extra.join
+    --
+    --     model_ =
+    --         Model
+    --             { model
+    --                 | token = response.token
+    --                 , refreshFrom = refreshTimeFromToken decodedToken
+    --                 , decodedToken = decodedToken
+    --                 , authState = authStateFromToken decodedToken
+    --             }
+    -- in
+    --     ( model_
+    --     , Cmd.batch
+    --         [ delayedRefreshCmd model_
+    --         ]
+    --     )
+    ( Model model, Cmd.none )
 
 
 refreshResponse : Model.AuthResponse -> Model -> ( Model, Cmd Msg )
 refreshResponse (Model.AuthResponse response) (Model model) =
-    let
-        decodedToken =
-            Maybe.map Jwt.decode response.token
-                |> Maybe.Extra.join
-
-        model_ =
-            Model
-                { model
-                    | token = response.token
-                    , refreshFrom = refreshTimeFromToken decodedToken
-                    , decodedToken = decodedToken
-                    , authState = authStateFromToken decodedToken
-                }
-    in
-        ( model_, delayedRefreshCmd model_ )
+    -- let
+    --     decodedToken =
+    --         Maybe.map Jwt.decode response.token
+    --             |> Maybe.Extra.join
+    --
+    --     model_ =
+    --         Model
+    --             { model
+    --                 | token = response.token
+    --                 , refreshFrom = refreshTimeFromToken decodedToken
+    --                 , decodedToken = decodedToken
+    --                 , authState = authStateFromToken decodedToken
+    --             }
+    -- in
+    --     ( model_, delayedRefreshCmd model_ )
+    ( Model model, Cmd.none )
 
 
 logoutResponse : Model -> ( Model, Cmd Msg )
 logoutResponse (Model model) =
-    ( Model { model | token = Nothing, authState = authStateFromToken Nothing }
-    , Cmd.none
-    )
+    -- ( Model { model | token = Nothing, authState = authStateFromToken Nothing }
+    -- , Cmd.none
+    -- )
+    ( Model model, Cmd.none )
 
 
 
@@ -302,13 +337,14 @@ logoutResponse (Model model) =
 
 delayedRefreshCmd : Model -> Cmd Msg
 delayedRefreshCmd (Model model) =
-    case model.refreshFrom of
-        Nothing ->
-            Cmd.none
-
-        Just refreshDate ->
-            tokenExpiryTask model.authApiRoot refreshDate
-                |> Task.attempt (\result -> Refreshed result)
+    -- case model.refreshFrom of
+    --     Nothing ->
+    --         Cmd.none
+    --
+    --     Just refreshDate ->
+    --         tokenExpiryTask model.authApiRoot refreshDate
+    --             |> Task.attempt (\result -> Refreshed result)
+    Cmd.none
 
 
 tokenExpiryTask : String -> Date -> Task.Task Http.Error Model.AuthResponse
@@ -332,50 +368,3 @@ authRequestFromCredentials credentials =
 
 
 -- Event handler.
-
-
-{-| Updates the auth state and triggers events needed to communicate with the
-auth server.
--}
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg (Model model) =
-    case msg of
-        AuthApi action_ ->
-            Auth.Service.update callbacks action_ (Model model)
-
-        LogIn credentials ->
-            ( Model
-                { model
-                    | token = Nothing
-                    , authState = authStateFromToken Nothing
-                    , logonAttempted = True
-                }
-            , Auth.Service.invokeLogin model.authApiRoot AuthApi (authRequestFromCredentials credentials)
-            )
-
-        Refresh ->
-            ( Model { model | logonAttempted = False }, Auth.Service.invokeRefresh model.authApiRoot AuthApi )
-
-        LogOut ->
-            ( Model { model | logonAttempted = False }, Auth.Service.invokeLogout model.authApiRoot AuthApi )
-
-        NotAuthed ->
-            ( Model
-                { model
-                    | token = Nothing
-                    , authState = authStateFromToken Nothing
-                    , logonAttempted = False
-                }
-            , Cmd.none
-            )
-
-        Refreshed result ->
-            case result of
-                Err _ ->
-                    ( Model model, Cmd.none )
-
-                Ok authResponse ->
-                    if isLoggedIn (Model model) then
-                        refreshResponse authResponse (Model model)
-                    else
-                        ( Model model, Cmd.none )

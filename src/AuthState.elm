@@ -18,7 +18,8 @@ type alias AuthenticatedModel =
     { token : String
     , decodedToken : Token
     , permissions : List String
-    , expiresAt : Maybe Date
+    , expiresAt : Date
+    , refreshFrom : Date
     , username : String
     }
 
