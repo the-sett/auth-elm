@@ -189,55 +189,56 @@ update msg model =
         ( lowerModel innerModel model, cmds )
 
 
+noop authState =
+    ( authState, Cmd.none )
+
+
+reset =
+    ( AuthState.loggedOut, Cmd.none )
+
+
 {-| Updates the auth state and triggers events needed to communicate with the
 auth server.
 -}
 innerUpdate : String -> Msg -> AuthState -> ( AuthState, Cmd Msg )
 innerUpdate authApiRoot msg authState =
-    let
-        noop =
-            ( authState, Cmd.none )
+    case msg of
+        AuthApi apiMsg ->
+            Auth.Service.update callbacks apiMsg authState
 
-        reset =
-            ( AuthState.loggedOut, Cmd.none )
-    in
-        case msg of
-            AuthApi apiMsg ->
-                Auth.Service.update callbacks apiMsg authState
+        LogIn credentials ->
+            case authState of
+                AuthState.LoggedOut state ->
+                    ( AuthState.toAttempting state
+                    , Auth.Service.invokeLogin authApiRoot AuthApi (authRequestFromCredentials credentials)
+                    )
 
-            LogIn credentials ->
-                case authState of
-                    AuthState.LoggedOut state ->
-                        ( AuthState.toAttempting state
-                        , Auth.Service.invokeLogin authApiRoot AuthApi (authRequestFromCredentials credentials)
-                        )
+                _ ->
+                    noop authState
 
-                    _ ->
-                        noop
+        Refresh ->
+            case authState of
+                AuthState.LoggedIn state ->
+                    ( AuthState.toRefreshing state
+                    , Auth.Service.invokeRefresh authApiRoot AuthApi
+                    )
 
-            Refresh ->
-                case authState of
-                    AuthState.LoggedIn state ->
-                        ( AuthState.toRefreshing state
-                        , Auth.Service.invokeRefresh authApiRoot AuthApi
-                        )
+                _ ->
+                    noop authState
 
-                    _ ->
-                        noop
+        LogOut ->
+            ( authState, Auth.Service.invokeLogout authApiRoot AuthApi )
 
-            LogOut ->
-                ( authState, Auth.Service.invokeLogout authApiRoot AuthApi )
+        NotAuthed ->
+            reset
 
-            NotAuthed ->
-                reset
+        Refreshed result ->
+            case result of
+                Err _ ->
+                    reset
 
-            Refreshed result ->
-                case result of
-                    Err _ ->
-                        reset
-
-                    Ok authResponse ->
-                        refreshResponse authResponse authState
+                Ok authResponse ->
+                    refreshResponse authResponse authState
 
 
 
@@ -275,7 +276,7 @@ callbacks =
 
 
 loginResponse : Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
-loginResponse (Model.AuthResponse response) model =
+loginResponse (Model.AuthResponse response) authState =
     -- let
     --     decodedToken =
     --         Maybe.map Jwt.decode response.token
@@ -295,11 +296,11 @@ loginResponse (Model.AuthResponse response) model =
     --         [ delayedRefreshCmd model_
     --         ]
     --     )
-    ( model, Cmd.none )
+    noop authState
 
 
 refreshResponse : Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
-refreshResponse (Model.AuthResponse response) model =
+refreshResponse (Model.AuthResponse response) authState =
     -- let
     --     decodedToken =
     --         Maybe.map Jwt.decode response.token
@@ -315,12 +316,12 @@ refreshResponse (Model.AuthResponse response) model =
     --             }
     -- in
     --     ( model_, delayedRefreshCmd model_ )
-    ( model, Cmd.none )
+    noop authState
 
 
 logoutResponse : AuthState -> ( AuthState, Cmd Msg )
-logoutResponse model =
-    ( AuthState.loggedOut, Cmd.none )
+logoutResponse authState =
+    reset
 
 
 
