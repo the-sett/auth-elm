@@ -222,9 +222,9 @@ innerUpdate authApiRoot msg authState =
                     _ ->
                         noop
 
-            --
-            -- ( _, LogOut ) ->
-            --     ( Model { model | logonAttempted = False }, Auth.Service.invokeLogout model.authApiRoot AuthApi )
+            LogOut ->
+                ( authState, Auth.Service.invokeLogout authApiRoot AuthApi )
+
             --
             -- ( _, NotAuthed ) ->
             --     ( Model
