@@ -142,27 +142,25 @@ loginView model =
                             [ text "Log In" ]
                         ]
                     , div [ class "mdl-card__supporting-text" ]
-                        [ form [ action "#" ]
-                            [ Textfield.render Mdl
-                                [ 1, 1 ]
-                                model.mdl
-                                [ Textfield.label "Username"
-                                , Textfield.floatingLabel
-                                , Textfield.text_
-                                , Options.onInput UpdateUsername
-                                ]
-                                []
-                            , Textfield.render Mdl
-                                [ 1, 2 ]
-                                model.mdl
-                                [ Textfield.label "Password"
-                                , Textfield.floatingLabel
-                                , Textfield.text_
-                                , Textfield.password
-                                , Options.onInput UpdatePassword
-                                ]
-                                []
+                        [ Textfield.render Mdl
+                            [ 1, 1 ]
+                            model.mdl
+                            [ Textfield.label "Username"
+                            , Textfield.floatingLabel
+                            , Textfield.text_
+                            , Options.onInput UpdateUsername
                             ]
+                            []
+                        , Textfield.render Mdl
+                            [ 1, 2 ]
+                            model.mdl
+                            [ Textfield.label "Password"
+                            , Textfield.floatingLabel
+                            , Textfield.text_
+                            , Textfield.password
+                            , Options.onInput UpdatePassword
+                            ]
+                            []
                         ]
                     , div [ class "mdl-card__actions" ]
                         [ div [ class "control-bar" ]
@@ -203,27 +201,25 @@ notPermittedView model =
                             [ text "Not Authorized" ]
                         ]
                     , div [ class "mdl-card__supporting-text" ]
-                        [ form [ action "#" ]
-                            [ Textfield.render Mdl
-                                [ 1, 1 ]
-                                model.mdl
-                                [ Textfield.label "Username"
-                                , Textfield.floatingLabel
-                                , Textfield.text_
-                                , Textfield.disabled
-                                ]
-                                []
-                            , Textfield.render Mdl
-                                [ 1, 2 ]
-                                model.mdl
-                                [ Textfield.label "Password"
-                                , Textfield.floatingLabel
-                                , Textfield.text_
-                                , Textfield.password
-                                , Textfield.disabled
-                                ]
-                                []
+                        [ Textfield.render Mdl
+                            [ 1, 1 ]
+                            model.mdl
+                            [ Textfield.label "Username"
+                            , Textfield.floatingLabel
+                            , Textfield.text_
+                            , Textfield.disabled
                             ]
+                            []
+                        , Textfield.render Mdl
+                            [ 1, 2 ]
+                            model.mdl
+                            [ Textfield.label "Password"
+                            , Textfield.floatingLabel
+                            , Textfield.text_
+                            , Textfield.password
+                            , Textfield.disabled
+                            ]
+                            []
                         ]
                     , div [ class "mdl-card__actions" ]
                         [ div [ class "control-bar" ]
