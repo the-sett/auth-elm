@@ -37,10 +37,8 @@ type alias Model =
 type Msg
     = AuthMsg Auth.Msg
     | Mdl (Material.Msg Msg)
-    | GetStarted
     | LogIn
     | TryAgain
-    | Cancel
     | UpdateUsername String
     | UpdatePassword String
 
@@ -76,23 +74,13 @@ update action model =
             Material.update Mdl action_ model
 
         AuthMsg msg ->
-            let
-                ( authUpdatedModel, authUpdateCmds ) =
-                    lift .auth (\m x -> { m | auth = x }) AuthMsg Auth.update msg model
-            in
-                ( authUpdatedModel, authUpdateCmds )
-
-        GetStarted ->
-            ( model, Cmd.none )
+            lift .auth (\m x -> { m | auth = x }) AuthMsg Auth.update msg model
 
         LogIn ->
             ( model, message (AuthMsg <| Auth.login { username = model.username, password = model.password }) )
 
         TryAgain ->
-            ( model, message <| AuthMsg Auth.unauthed )
-
-        Cancel ->
-            ( model, Cmd.none )
+            ( { model | username = "", password = "" }, message <| AuthMsg Auth.unauthed )
 
         UpdateUsername str ->
             ( { model | username = str }, Cmd.none )
