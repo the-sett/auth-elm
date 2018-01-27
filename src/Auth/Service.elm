@@ -8,79 +8,22 @@ import Task exposing (Task)
 import Model exposing (..)
 
 
-type Msg
-    = Login (Result.Result Http.Error Model.AuthResponse)
-    | Refresh (Result.Result Http.Error Model.AuthResponse)
-    | Logout (Result.Result Http.Error ())
-
-
-invokeLogin : String -> (Msg -> msg) -> Model.AuthRequest -> Cmd msg
-invokeLogin root msg request =
+invokeLogin : String -> (Result.Result Http.Error Model.AuthResponse -> msg) -> Model.AuthRequest -> Cmd msg
+invokeLogin root tagger request =
     loginTask root request
-        |> Http.send Login
-        |> Cmd.map msg
+        |> Http.send tagger
 
 
-invokeRefresh : String -> (Msg -> msg) -> Cmd msg
-invokeRefresh root msg =
+invokeRefresh : String -> (Result.Result Http.Error Model.AuthResponse -> msg) -> Cmd msg
+invokeRefresh root tagger =
     refreshTask root
-        |> Http.send Refresh
-        |> Cmd.map msg
+        |> Http.send tagger
 
 
-invokeLogout : String -> (Msg -> msg) -> Cmd msg
-invokeLogout root msg =
+invokeLogout : String -> (Result.Result Http.Error () -> msg) -> Cmd msg
+invokeLogout root tagger =
     logoutTask root
-        |> Http.send Logout
-        |> Cmd.map msg
-
-
-type alias Callbacks model msg =
-    { login : Model.AuthResponse -> model -> ( model, Cmd msg )
-    , refresh : Model.AuthResponse -> model -> ( model, Cmd msg )
-    , logout : model -> ( model, Cmd msg )
-    , error : Http.Error -> model -> ( model, Cmd msg )
-    }
-
-
-callbacks : Callbacks model msg
-callbacks =
-    { login = \_ -> \model -> ( model, Cmd.none )
-    , refresh = \_ -> \model -> ( model, Cmd.none )
-    , logout = \model -> ( model, Cmd.none )
-    , error = \_ -> \model -> ( model, Cmd.none )
-    }
-
-
-update : Callbacks model msg -> Msg -> model -> ( model, Cmd msg )
-update callbacks action model =
-    case action of
-        Login result ->
-            (case result of
-                Ok response ->
-                    callbacks.login response model
-
-                Err httpError ->
-                    callbacks.error httpError model
-            )
-
-        Refresh result ->
-            (case result of
-                Ok response ->
-                    callbacks.refresh response model
-
-                Err httpError ->
-                    callbacks.error httpError model
-            )
-
-        Logout result ->
-            (case result of
-                Ok _ ->
-                    callbacks.logout model
-
-                Err httpError ->
-                    callbacks.error httpError model
-            )
+        |> Http.send tagger
 
 
 routes root =

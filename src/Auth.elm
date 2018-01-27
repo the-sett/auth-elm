@@ -162,12 +162,14 @@ lowerModel inner model =
 {-| Describes the events this controller responds to.
 -}
 type Msg
-    = AuthApi Auth.Service.Msg
-    | LogIn Credentials
+    = LogIn Credentials
     | Refresh
     | LogOut
     | NotAuthed
     | Refreshed (Result.Result Http.Error Model.AuthResponse)
+    | LogInResponse (Result.Result Http.Error Model.AuthResponse)
+    | RefreshResponse (Result.Result Http.Error Model.AuthResponse)
+    | LogOutResponse (Result.Result Http.Error ())
 
 
 {-| The initial unauthed state.
@@ -202,15 +204,12 @@ auth server.
 -}
 innerUpdate : String -> Msg -> AuthState -> ( AuthState, Cmd Msg )
 innerUpdate authApiRoot msg authState =
-    case msg of
-        AuthApi apiMsg ->
-            Auth.Service.update (callbacks authApiRoot) apiMsg authState
-
+    case (Debug.log "auth" msg) of
         LogIn credentials ->
             case authState of
                 AuthState.LoggedOut state ->
                     ( AuthState.toAttempting state
-                    , Auth.Service.invokeLogin authApiRoot AuthApi (authRequestFromCredentials credentials)
+                    , Auth.Service.invokeLogin authApiRoot LogInResponse (authRequestFromCredentials credentials)
                     )
 
                 _ ->
@@ -220,14 +219,14 @@ innerUpdate authApiRoot msg authState =
             case authState of
                 AuthState.LoggedIn state ->
                     ( AuthState.toRefreshing state
-                    , Auth.Service.invokeRefresh authApiRoot AuthApi
+                    , Auth.Service.invokeRefresh authApiRoot RefreshResponse
                     )
 
                 _ ->
                     noop authState
 
         LogOut ->
-            ( authState, Auth.Service.invokeLogout authApiRoot AuthApi )
+            ( authState, Auth.Service.invokeLogout authApiRoot LogOutResponse )
 
         NotAuthed ->
             reset
@@ -239,6 +238,25 @@ innerUpdate authApiRoot msg authState =
 
                 Ok authResponse ->
                     (refreshResponse authApiRoot) authResponse authState
+
+        LogInResponse result ->
+            case result of
+                Err _ ->
+                    reset
+
+                Ok authResponse ->
+                    logInResponse authApiRoot authResponse authState
+
+        RefreshResponse result ->
+            case result of
+                Err _ ->
+                    reset
+
+                Ok authResponse ->
+                    refreshResponse authApiRoot authResponse authState
+
+        LogOutResponse result ->
+            reset
 
 
 
@@ -265,17 +283,8 @@ authModelFromToken rawToken token =
 -- Auth REST API calls.
 
 
-callbacks : String -> Auth.Service.Callbacks AuthState Msg
-callbacks authApiRoot =
-    { login = loginResponse authApiRoot
-    , refresh = refreshResponse authApiRoot
-    , logout = logoutResponse authApiRoot
-    , error = \_ -> \model -> ( model, Cmd.none )
-    }
-
-
-loginResponse : String -> Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
-loginResponse authApiRoot (Model.AuthResponse response) authState =
+logInResponse : String -> Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
+logInResponse authApiRoot (Model.AuthResponse response) authState =
     case authState of
         AuthState.Attempting state ->
             let
@@ -322,11 +331,6 @@ refreshResponse authApiRoot (Model.AuthResponse response) authState =
 
         _ ->
             noop authState
-
-
-logoutResponse : String -> AuthState -> ( AuthState, Cmd Msg )
-logoutResponse _ authState =
-    reset
 
 
 
