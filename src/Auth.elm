@@ -166,7 +166,6 @@ type Msg
     | Refresh
     | LogOut
     | NotAuthed
-    | Refreshed (Result.Result Http.Error Model.AuthResponse)
     | LogInResponse (Result.Result Http.Error Model.AuthResponse)
     | RefreshResponse (Result.Result Http.Error Model.AuthResponse)
     | LogOutResponse (Result.Result Http.Error ())
@@ -224,23 +223,6 @@ innerUpdate authApiRoot msg authState =
 
         ( NotAuthed, _ ) ->
             reset
-
-        ( Refreshed result, AuthState.Refreshing state ) ->
-            case result of
-                Err _ ->
-                    reset
-
-                Ok (Model.AuthResponse response) ->
-                    let
-                        maybeToken =
-                            Jwt.decode response.token
-                    in
-                        case maybeToken of
-                            Nothing ->
-                                noop authState
-
-                            Just decodedToken ->
-                                (toLoggedInFromToken authApiRoot) response.token decodedToken state
 
         ( LogInResponse result, AuthState.Attempting state ) ->
             case result of
@@ -326,7 +308,7 @@ authModelFromToken rawToken token =
 delayedRefreshCmd : String -> AuthenticatedModel -> Cmd Msg
 delayedRefreshCmd authApiRoot model =
     tokenExpiryTask authApiRoot model.refreshFrom
-        |> Task.attempt (\result -> Refreshed result)
+        |> Task.attempt (\result -> RefreshResponse result)
 
 
 tokenExpiryTask : String -> Date -> Task.Task Http.Error Model.AuthResponse
