@@ -2,8 +2,9 @@ module AuthState
     exposing
         ( AuthState(..)
         , AuthenticatedModel
-          -- Accessing the inner model
+          -- Convenience re-exports from StateMachine
         , State
+        , Allowed
         , untag
           -- Constructors
         , loggedOut
@@ -29,6 +30,10 @@ untag =
 
 type alias State p m =
     StateMachine.State p m
+
+
+type alias Allowed =
+    StateMachine.Allowed
 
 
 type alias AuthenticatedModel =

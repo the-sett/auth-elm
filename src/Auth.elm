@@ -199,64 +199,104 @@ reset =
     ( AuthState.loggedOut, Cmd.none )
 
 
+failed state =
+    ( AuthState.toFailed state, Cmd.none )
+
+
 {-| Updates the auth state and triggers events needed to communicate with the
 auth server.
 -}
 innerUpdate : String -> Msg -> AuthState -> ( AuthState, Cmd Msg )
 innerUpdate authApiRoot msg authState =
-    case (Debug.log "auth" msg) of
-        LogIn credentials ->
-            case authState of
-                AuthState.LoggedOut state ->
-                    ( AuthState.toAttempting state
-                    , Auth.Service.invokeLogin authApiRoot LogInResponse (authRequestFromCredentials credentials)
-                    )
+    case ( Debug.log "auth" msg, authState ) of
+        ( LogIn credentials, AuthState.LoggedOut state ) ->
+            ( AuthState.toAttempting state
+            , Auth.Service.invokeLogin authApiRoot LogInResponse (authRequestFromCredentials credentials)
+            )
 
-                _ ->
-                    noop authState
+        ( Refresh, AuthState.LoggedIn state ) ->
+            ( AuthState.toRefreshing state
+            , Auth.Service.invokeRefresh authApiRoot RefreshResponse
+            )
 
-        Refresh ->
-            case authState of
-                AuthState.LoggedIn state ->
-                    ( AuthState.toRefreshing state
-                    , Auth.Service.invokeRefresh authApiRoot RefreshResponse
-                    )
-
-                _ ->
-                    noop authState
-
-        LogOut ->
+        ( LogOut, _ ) ->
             ( authState, Auth.Service.invokeLogout authApiRoot LogOutResponse )
 
-        NotAuthed ->
+        ( NotAuthed, _ ) ->
             reset
 
-        Refreshed result ->
+        ( Refreshed result, AuthState.Refreshing state ) ->
             case result of
                 Err _ ->
                     reset
 
-                Ok authResponse ->
-                    (refreshResponse authApiRoot) authResponse authState
+                Ok (Model.AuthResponse response) ->
+                    let
+                        maybeToken =
+                            Jwt.decode response.token
+                    in
+                        case maybeToken of
+                            Nothing ->
+                                noop authState
 
-        LogInResponse result ->
+                            Just decodedToken ->
+                                (toLoggedInFromToken authApiRoot) response.token decodedToken state
+
+        ( LogInResponse result, AuthState.Attempting state ) ->
+            case result of
+                Err _ ->
+                    failed state
+
+                Ok (Model.AuthResponse response) ->
+                    let
+                        maybeToken =
+                            Jwt.decode response.token
+                    in
+                        case maybeToken of
+                            Nothing ->
+                                noop authState
+
+                            Just decodedToken ->
+                                (toLoggedInFromToken authApiRoot) response.token decodedToken state
+
+        ( RefreshResponse result, AuthState.Refreshing state ) ->
             case result of
                 Err _ ->
                     reset
 
-                Ok authResponse ->
-                    logInResponse authApiRoot authResponse authState
+                Ok (Model.AuthResponse response) ->
+                    let
+                        maybeToken =
+                            Jwt.decode response.token
+                    in
+                        case maybeToken of
+                            Nothing ->
+                                noop authState
 
-        RefreshResponse result ->
-            case result of
-                Err _ ->
-                    reset
+                            Just decodedToken ->
+                                (toLoggedInFromToken authApiRoot) response.token decodedToken state
 
-                Ok authResponse ->
-                    refreshResponse authApiRoot authResponse authState
-
-        LogOutResponse result ->
+        ( LogOutResponse result, _ ) ->
             reset
+
+        ( _, _ ) ->
+            noop authState
+
+
+toLoggedInFromToken :
+    String
+    -> String
+    -> Token
+    -> AuthState.State { p | loggedIn : AuthState.Allowed } m
+    -> ( AuthState, Cmd Msg )
+toLoggedInFromToken authApiRoot token decodedToken state =
+    let
+        authModel =
+            authModelFromToken token decodedToken
+    in
+        ( AuthState.toLoggedInWithAuthenticatedModel authModel state
+        , delayedRefreshCmd authApiRoot authModel
+        )
 
 
 
@@ -277,60 +317,6 @@ authModelFromToken rawToken token =
     , username = token.sub
     , refreshFrom = refreshTimeFromToken token
     }
-
-
-
--- Auth REST API calls.
-
-
-logInResponse : String -> Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
-logInResponse authApiRoot (Model.AuthResponse response) authState =
-    case authState of
-        AuthState.Attempting state ->
-            let
-                maybeToken =
-                    Jwt.decode response.token
-            in
-                case maybeToken of
-                    Nothing ->
-                        noop authState
-
-                    Just decodedToken ->
-                        let
-                            authModel =
-                                authModelFromToken response.token decodedToken
-                        in
-                            ( AuthState.toLoggedInWithAuthenticatedModel authModel state
-                            , delayedRefreshCmd authApiRoot authModel
-                            )
-
-        _ ->
-            noop authState
-
-
-refreshResponse : String -> Model.AuthResponse -> AuthState -> ( AuthState, Cmd Msg )
-refreshResponse authApiRoot (Model.AuthResponse response) authState =
-    case authState of
-        AuthState.Refreshing state ->
-            let
-                maybeToken =
-                    Jwt.decode response.token
-            in
-                case maybeToken of
-                    Nothing ->
-                        noop authState
-
-                    Just decodedToken ->
-                        let
-                            authModel =
-                                authModelFromToken response.token decodedToken
-                        in
-                            ( AuthState.toLoggedInWithAuthenticatedModel authModel state
-                            , delayedRefreshCmd authApiRoot authModel
-                            )
-
-        _ ->
-            noop authState
 
 
 
