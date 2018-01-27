@@ -7,32 +7,28 @@ module Top exposing (init, update, view, Model, Msg)
 -}
 
 import Dict exposing (Dict)
-import Login
-import Authenticated
-import Html exposing (Html, div)
-import Html.Attributes
+import Html exposing (Html, div, img, h4, text, form)
+import Html.Attributes exposing (class, src, action)
 import Config exposing (config)
 import Auth exposing (AuthenticationState(..))
 import Maybe.Extra
 import UpdateUtils exposing (lift, message)
-import TopState as TopState
-    exposing
-        ( Session(..)
-        , initial
-        , toWelcomeWithLoginModel
-        , toWelcome
-        , toFailedAuth
-        , toAuthenticated
-        , updateLoginModel
-        )
 import StateMachine exposing (State)
+import ViewUtils
+import Material
+import Material.Button as Button
+import Material.Icon as Icon
+import Material.Textfield as Textfield
+import Material.Options as Options
 
 
 {-| The content editor program model.
 -}
 type alias Model =
     { auth : Auth.Model
-    , session : Session
+    , mdl : Material.Model
+    , username : String
+    , password : String
     }
 
 
@@ -40,14 +36,21 @@ type alias Model =
 -}
 type Msg
     = AuthMsg Auth.Msg
-    | LoginMsg Login.Msg
+    | Mdl (Material.Msg Msg)
+    | GetStarted
+    | LogIn
+    | TryAgain
+    | Cancel
+    | UpdateUsername String
+    | UpdatePassword String
 
 
 
 -- Initialization
 
 
-{-| Initiales the application state by setting it to the 'Initial' state.
+{-| Initializes the application state by setting it to the default Auth state
+of LoggedOut.
 Requests that an Auth refresh be performed to check what the current
 authentication state is, as the application may be able to re-authenticate
 from a refresh token held as a cookie, without needing the user to log in.
@@ -58,7 +61,9 @@ init =
             Auth.init
                 { authApiRoot = config.authRoot
                 }
-      , session = initial
+      , mdl = Material.model
+      , username = ""
+      , password = ""
       }
     , message <| AuthMsg Auth.refresh
     )
@@ -66,73 +71,34 @@ init =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
-    case ( model.session, action ) of
-        ( _, AuthMsg msg ) ->
+    case action of
+        Mdl action_ ->
+            Material.update Mdl action_ model
+
+        AuthMsg msg ->
             let
                 ( authUpdatedModel, authUpdateCmds ) =
                     lift .auth (\m x -> { m | auth = x }) AuthMsg Auth.update msg model
             in
-                ( updateSessionFromAuthState authUpdatedModel, authUpdateCmds )
+                ( authUpdatedModel, authUpdateCmds )
 
-        ( Welcome state, LoginMsg msg ) ->
-            let
-                ( newState, cmdMsgs, maybeAuthCmd ) =
-                    updateLoginMsg msg state
-            in
-                case maybeAuthCmd of
-                    Nothing ->
-                        ( { model | session = Welcome newState }, cmdMsgs )
-
-                    Just authCmd ->
-                        ( { model | session = Welcome newState }, Cmd.batch [ message (AuthMsg authCmd), cmdMsgs ] )
-
-        ( FailedAuth state, LoginMsg msg ) ->
-            let
-                ( newState, cmdMsgs, maybeAuthCmd ) =
-                    updateLoginMsg msg state
-            in
-                case maybeAuthCmd of
-                    Nothing ->
-                        ( { model | session = FailedAuth newState }, cmdMsgs )
-
-                    Just authCmd ->
-                        ( { model | session = FailedAuth newState }, Cmd.batch [ message (AuthMsg authCmd), cmdMsgs ] )
-
-        ( _, _ ) ->
+        GetStarted ->
             ( model, Cmd.none )
 
+        LogIn ->
+            ( model, message (AuthMsg <| Auth.login { username = model.username, password = model.password }) )
 
-updateSessionFromAuthState : Model -> Model
-updateSessionFromAuthState model =
-    let
-        session =
-            case ( model.session, model.auth.state ) of
-                ( Welcome state, LoggedIn _ ) ->
-                    toAuthenticated state
+        TryAgain ->
+            ( model, message <| AuthMsg Auth.unauthed )
 
-                ( Welcome state, Failed ) ->
-                    toFailedAuth state
+        Cancel ->
+            ( model, Cmd.none )
 
-                ( FailedAuth state, _ ) ->
-                    toWelcome state
+        UpdateUsername str ->
+            ( { model | username = str }, Cmd.none )
 
-                ( Initial state, _ ) ->
-                    toWelcomeWithLoginModel Login.init state
-
-                ( _, _ ) ->
-                    model.session
-    in
-        { model | session = session }
-
-
-updateLoginMsg : Login.Msg -> State t Login.Model -> ( State t Login.Model, Cmd Msg, Maybe Auth.Msg )
-updateLoginMsg msg state =
-    case Login.update msg (TopState.untag state) of
-        ( loginModel, cmd, maybeAuthCmd ) ->
-            ( updateLoginModel (always loginModel) state
-            , Cmd.map LoginMsg cmd
-            , maybeAuthCmd
-            )
+        UpdatePassword str ->
+            ( { model | password = str }, Cmd.none )
 
 
 
@@ -145,18 +111,15 @@ view : Model -> Html Msg
 view model =
     let
         innerHtml =
-            case model.session of
-                Initial _ ->
-                    Html.div [] []
+            case model.auth.state of
+                LoggedOut ->
+                    loginView model
 
-                Welcome state ->
-                    Login.loginView (TopState.untag state) |> Html.map LoginMsg
+                Failed ->
+                    notPermittedView model
 
-                FailedAuth state ->
-                    Login.notPermittedView (TopState.untag state) |> Html.map LoginMsg
-
-                Authenticated state ->
-                    Authenticated.authenticatedView
+                LoggedIn state ->
+                    authenticatedView model
 
         styleLink cssFileName =
             Html.node "link"
@@ -173,3 +136,166 @@ view model =
             , styleLink "auth-service.css"
             , innerHtml
             ]
+
+
+loginView : { a | mdl : Material.Model } -> Html Msg
+loginView model =
+    div []
+        [ div [ class "layout-fixed-width--one-card" ]
+            [ ViewUtils.rhythm1SpacerDiv
+            , div [ class "mdl-grid" ]
+                [ div [ class "mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp" ]
+                    [ div [ class "mdl-card__media" ]
+                        [ img [ src "images/data_center-large.png" ]
+                            []
+                        ]
+                    , div [ class "mdl-card__title" ]
+                        [ h4 [ class "mdl-card__title-text" ]
+                            [ text "Log In" ]
+                        ]
+                    , div [ class "mdl-card__supporting-text" ]
+                        [ form [ action "#" ]
+                            [ Textfield.render Mdl
+                                [ 1, 1 ]
+                                model.mdl
+                                [ Textfield.label "Username"
+                                , Textfield.floatingLabel
+                                , Textfield.text_
+                                , Options.onInput UpdateUsername
+                                ]
+                                []
+                            , Textfield.render Mdl
+                                [ 1, 2 ]
+                                model.mdl
+                                [ Textfield.label "Password"
+                                , Textfield.floatingLabel
+                                , Textfield.text_
+                                , Textfield.password
+                                , Options.onInput UpdatePassword
+                                ]
+                                []
+                            ]
+                        ]
+                    , div [ class "mdl-card__actions" ]
+                        [ div [ class "control-bar" ]
+                            [ div [ class "control-bar__row" ]
+                                [ div [ class "control-bar__left-0" ]
+                                    [ Button.render Mdl
+                                        [ 1, 2 ]
+                                        model.mdl
+                                        [ Button.colored
+                                        , Options.onClick LogIn
+                                        ]
+                                        [ text "Log In"
+                                        , Icon.i "chevron_right"
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+
+notPermittedView : { a | mdl : Material.Model } -> Html Msg
+notPermittedView model =
+    div []
+        [ div [ class "layout-fixed-width--one-card" ]
+            [ ViewUtils.rhythm1SpacerDiv
+            , div [ class "mdl-grid" ]
+                [ div [ class "mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp" ]
+                    [ div [ class "mdl-card__media" ]
+                        [ img [ src "images/data_center-large.png" ]
+                            []
+                        ]
+                    , div [ class "mdl-card__title" ]
+                        [ h4 [ class "mdl-card__title-text" ]
+                            [ text "Not Authorized" ]
+                        ]
+                    , div [ class "mdl-card__supporting-text" ]
+                        [ form [ action "#" ]
+                            [ Textfield.render Mdl
+                                [ 1, 1 ]
+                                model.mdl
+                                [ Textfield.label "Username"
+                                , Textfield.floatingLabel
+                                , Textfield.text_
+                                , Textfield.disabled
+                                ]
+                                []
+                            , Textfield.render Mdl
+                                [ 1, 2 ]
+                                model.mdl
+                                [ Textfield.label "Password"
+                                , Textfield.floatingLabel
+                                , Textfield.text_
+                                , Textfield.password
+                                , Textfield.disabled
+                                ]
+                                []
+                            ]
+                        ]
+                    , div [ class "mdl-card__actions" ]
+                        [ div [ class "control-bar" ]
+                            [ div [ class "control-bar__row" ]
+                                [ div [ class "control-bar__left-0" ]
+                                    [ Button.render Mdl
+                                        [ 2, 1 ]
+                                        model.mdl
+                                        [ Button.colored
+                                        , Options.onClick TryAgain
+                                        ]
+                                        [ Icon.i "chevron_left"
+                                        , text "Try Again"
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+
+authenticatedView : { a | mdl : Material.Model } -> Html Msg
+authenticatedView model =
+    div []
+        [ div [ class "layout-fixed-width--one-card" ]
+            [ ViewUtils.rhythm1SpacerDiv
+            , div [ class "mdl-grid" ]
+                [ div [ class "mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp" ]
+                    [ div [ class "mdl-card__media" ]
+                        [ img [ src "images/data_center-large.png" ]
+                            []
+                        ]
+                    , div [ class "mdl-card__title" ]
+                        [ h4 [ class "mdl-card__title-text" ]
+                            [ text "Authenticated" ]
+                        ]
+                    , div [ class "mdl-card__supporting-text" ]
+                        [ text "User Details"
+                        ]
+                    , div [ class "mdl-card__actions" ]
+                        [ div [ class "control-bar" ]
+                            [ div [ class "control-bar__row" ]
+                                [ div [ class "control-bar__left-0" ]
+                                    [ Button.render Mdl
+                                        [ 2, 1 ]
+                                        model.mdl
+                                        [ Button.colored
+                                        , Options.onClick TryAgain
+                                        ]
+                                        [ Icon.i "chevron_left"
+                                        , text "Log Out"
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
