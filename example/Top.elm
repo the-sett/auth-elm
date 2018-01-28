@@ -260,7 +260,7 @@ notPermittedView model =
         ]
 
 
-authenticatedView : { a | mdl : Material.Model } -> Html Msg
+authenticatedView : { a | auth : Auth.Model, mdl : Material.Model } -> Html Msg
 authenticatedView model =
     div []
         [ div [ class "layout-fixed-width--one-card" ]
@@ -276,7 +276,7 @@ authenticatedView model =
                             [ text "Authenticated" ]
                         ]
                     , div [ class "mdl-card__supporting-text" ]
-                        [ text "User Details"
+                        [ text <| "Logged In As: " ++ (toString model.auth.state)
                         ]
                     , div [ class "mdl-card__actions" ]
                         [ div [ class "control-bar" ]
