@@ -80,7 +80,7 @@ update action model =
             ( model, message (AuthMsg <| Auth.login { username = model.username, password = model.password }) )
 
         TryAgain ->
-            ( { model | username = "", password = "" }, message <| AuthMsg Auth.unauthed )
+            ( { model | username = "", password = "", mdl = Material.model }, message <| AuthMsg Auth.unauthed )
 
         UpdateUsername str ->
             ( { model | username = str }, Cmd.none )
@@ -126,7 +126,13 @@ view model =
             ]
 
 
-loginView : { a | mdl : Material.Model } -> Html Msg
+loginView :
+    { a
+        | mdl : Material.Model
+        , username : String
+        , password : String
+    }
+    -> Html Msg
 loginView model =
     div []
         [ div [ class "layout-fixed-width--one-card" ]
@@ -148,6 +154,7 @@ loginView model =
                             [ Textfield.label "Username"
                             , Textfield.floatingLabel
                             , Textfield.text_
+                            , Textfield.value model.username
                             , Options.onInput UpdateUsername
                             ]
                             []
@@ -158,6 +165,7 @@ loginView model =
                             , Textfield.floatingLabel
                             , Textfield.text_
                             , Textfield.password
+                            , Textfield.value model.password
                             , Options.onInput UpdatePassword
                             ]
                             []
@@ -185,7 +193,13 @@ loginView model =
         ]
 
 
-notPermittedView : { a | mdl : Material.Model } -> Html Msg
+notPermittedView :
+    { a
+        | mdl : Material.Model
+        , username : String
+        , password : String
+    }
+    -> Html Msg
 notPermittedView model =
     div []
         [ div [ class "layout-fixed-width--one-card" ]
@@ -208,6 +222,7 @@ notPermittedView model =
                             , Textfield.floatingLabel
                             , Textfield.text_
                             , Textfield.disabled
+                            , Textfield.value model.username
                             ]
                             []
                         , Textfield.render Mdl
@@ -218,6 +233,7 @@ notPermittedView model =
                             , Textfield.text_
                             , Textfield.password
                             , Textfield.disabled
+                            , Textfield.value model.password
                             ]
                             []
                         ]
