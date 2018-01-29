@@ -7,7 +7,7 @@ module Top exposing (init, update, view, Model, Msg)
 -}
 
 import Dict exposing (Dict)
-import Html exposing (Html, div, img, h4, text, form)
+import Html exposing (Html, div, img, h4, text, form, span)
 import Html.Attributes exposing (class, src, action)
 import Config exposing (config)
 import Auth exposing (AuthenticationState(..))
@@ -20,6 +20,8 @@ import Material.Button as Button
 import Material.Icon as Icon
 import Material.Textfield as Textfield
 import Material.Options as Options
+import Material.Chip as Chip
+import Material.List as Lists
 
 
 {-| The content editor program model.
@@ -107,7 +109,7 @@ view model =
                     notPermittedView model
 
                 LoggedIn state ->
-                    authenticatedView model
+                    authenticatedView model state
 
         styleLink cssFileName =
             Html.node "link"
@@ -260,8 +262,11 @@ notPermittedView model =
         ]
 
 
-authenticatedView : { a | auth : Auth.Model, mdl : Material.Model } -> Html Msg
-authenticatedView model =
+authenticatedView :
+    { a | mdl : Material.Model, username : String }
+    -> { permissions : List String, username : String }
+    -> Html Msg
+authenticatedView model user =
     div []
         [ div [ class "layout-fixed-width--one-card" ]
             [ ViewUtils.rhythm1SpacerDiv
@@ -276,7 +281,27 @@ authenticatedView model =
                             [ text "Authenticated" ]
                         ]
                     , div [ class "mdl-card__supporting-text" ]
-                        [ text <| "Logged In As: " ++ (toString model.auth.state)
+                        [ Lists.ul []
+                            [ Lists.li [ Lists.withBody ]
+                                -- NB! Required on every Lists.li containing body.
+                                [ Lists.content []
+                                    [ text "Logged In As"
+                                    , Lists.body [] [ text model.username ]
+                                    ]
+                                ]
+                            , Lists.li [ Lists.withBody ]
+                                [ Lists.content []
+                                    [ text "With Id"
+                                    , Lists.body [] [ text user.username ]
+                                    ]
+                                ]
+                            , Lists.li [ Lists.withBody ]
+                                [ Lists.content []
+                                    [ text "With Permissions"
+                                    , Lists.body [] <| permissionsToChips user.permissions
+                                    ]
+                                ]
+                            ]
                         ]
                     , div [ class "mdl-card__actions" ]
                         [ div [ class "control-bar" ]
@@ -299,3 +324,13 @@ authenticatedView model =
                 ]
             ]
         ]
+
+
+permissionsToChips : List String -> List (Html Msg)
+permissionsToChips permissions =
+    List.map
+        (\permission ->
+            span [ class "mdl-chip mdl-chip__text" ]
+                [ text permission ]
+        )
+        permissions
