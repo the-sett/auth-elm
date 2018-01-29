@@ -37,12 +37,12 @@ type alias Allowed =
 
 
 type alias AuthenticatedModel =
-    { token : String
+    { subject : String
+    , scopes : List String
+    , token : String
     , decodedToken : Token
-    , permissions : List String
     , expiresAt : Date
     , refreshFrom : Date
-    , username : String
     }
 
 

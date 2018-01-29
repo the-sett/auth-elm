@@ -264,7 +264,7 @@ notPermittedView model =
 
 authenticatedView :
     { a | mdl : Material.Model, username : String }
-    -> { permissions : List String, username : String }
+    -> { scopes : List String, subject : String }
     -> Html Msg
 authenticatedView model user =
     div []
@@ -292,13 +292,13 @@ authenticatedView model user =
                             , Lists.li [ Lists.withBody ]
                                 [ Lists.content []
                                     [ text "With Id"
-                                    , Lists.body [] [ text user.username ]
+                                    , Lists.body [] [ text user.subject ]
                                     ]
                                 ]
                             , Lists.li [ Lists.withBody ]
                                 [ Lists.content []
                                     [ text "With Permissions"
-                                    , Lists.body [] <| permissionsToChips user.permissions
+                                    , Lists.body [] <| permissionsToChips user.scopes
                                     ]
                                 ]
                             ]

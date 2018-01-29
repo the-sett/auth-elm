@@ -89,8 +89,8 @@ type AuthenticationState
     = Failed
     | LoggedOut
     | LoggedIn
-        { permissions : List String
-        , username : String
+        { scopes : List String
+        , subject : String
         }
 
 
@@ -131,13 +131,13 @@ liftModel model =
 lowerModel : AuthState -> Model -> Model
 lowerModel inner model =
     let
-        extract : AuthState.State p { auth : AuthenticatedModel } -> { permissions : List String, username : String }
+        extract : AuthState.State p { auth : AuthenticatedModel } -> { scopes : List String, subject : String }
         extract state =
             let
                 authModel =
                     AuthState.untag state
             in
-                { permissions = authModel.auth.permissions, username = authModel.auth.username }
+                { scopes = authModel.auth.scopes, subject = authModel.auth.subject }
     in
         case inner of
             AuthState.LoggedOut _ ->
@@ -294,9 +294,9 @@ authModelFromToken : String -> Token -> AuthenticatedModel
 authModelFromToken rawToken token =
     { token = rawToken
     , decodedToken = token
-    , permissions = token.scopes
+    , scopes = token.scopes
     , expiresAt = token.exp
-    , username = token.sub
+    , subject = token.sub
     , refreshFrom = refreshTimeFromToken token
     }
 
