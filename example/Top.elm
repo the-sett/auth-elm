@@ -6,21 +6,17 @@ module Top exposing (init, update, view, Model, Msg)
 
 -}
 
-import Dict exposing (Dict)
-import Html exposing (Html, div, img, h4, text, form, span)
-import Html.Attributes exposing (class, src, action)
+import Html exposing (Html, div, img, h4, text, span)
+import Html.Attributes exposing (class, src)
 import Config exposing (config)
 import Auth exposing (AuthenticationState(..))
-import Maybe.Extra
 import UpdateUtils exposing (lift)
-import StateMachine exposing (State)
 import ViewUtils
 import Material
 import Material.Button as Button
 import Material.Icon as Icon
 import Material.Textfield as Textfield
 import Material.Options as Options
-import Material.Chip as Chip
 import Material.List as Lists
 
 

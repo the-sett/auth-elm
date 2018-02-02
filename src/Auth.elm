@@ -34,6 +34,7 @@ import Jwt exposing (Token)
 import Auth.Service
 import Model
 import AuthState exposing (AuthState, AuthenticatedModel)
+import Utils exposing (message)
 
 
 -- The Auth API
@@ -54,33 +55,33 @@ type alias Credentials =
 
 {-| Requests that a login be performed.
 -}
-login : Credentials -> Msg
-login authRequest =
-    LogIn authRequest
+login : Credentials -> (Msg -> msg) -> Cmd msg
+login authRequest tagger =
+    LogIn authRequest |> tagger |> message
 
 
 {-| Requests that an attempt be made to refresh the auth token from the refresh
 token.
 -}
-refresh : Msg
-refresh =
-    Refresh
+refresh : (Msg -> msg) -> Cmd msg
+refresh tagger =
+    Refresh |> tagger |> message
 
 
 {-| Requests that a logout (including notifying the server of the logout) be
 performed.
 -}
-logout : Msg
-logout =
-    LogOut
+logout : (Msg -> msg) -> Cmd msg
+logout tagger =
+    LogOut |> tagger |> message
 
 
 {-| Requests that the auth state be cleared to the LoggedOut state. Usually in
 response to receiving a 401 or 403 error from a server.
 -}
-unauthed : Msg
-unauthed =
-    NotAuthed
+unauthed : (Msg -> msg) -> Cmd msg
+unauthed tagger =
+    NotAuthed |> tagger |> message
 
 
 {-| Auth states of interest to the consumer.
