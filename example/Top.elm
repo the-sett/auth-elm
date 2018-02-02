@@ -12,7 +12,7 @@ import Html.Attributes exposing (class, src, action)
 import Config exposing (config)
 import Auth exposing (AuthenticationState(..))
 import Maybe.Extra
-import UpdateUtils exposing (lift, message)
+import UpdateUtils exposing (lift)
 import StateMachine exposing (State)
 import ViewUtils
 import Material
