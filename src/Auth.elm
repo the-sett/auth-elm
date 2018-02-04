@@ -6,6 +6,7 @@ module Auth
         , refresh
         , logout
         , unauthed
+        , extractAuthenticationState
         , Model
         , Msg
         , AuthenticationState(..)
@@ -16,7 +17,7 @@ module Auth
 {-| Maintains the auth state and follows the TEA pattern to provide a stateful auth
 module that can be wired in to TEA applications update cycles.
 @docs Model, Msg
-@docs init, logonAttempted, update, updateFromMsg, extractAuthState, updateForwardLocation
+@docs init, logonAttempted, update, updateFromMsg, extractAuthenticationState
 -}
 
 import Date exposing (Date)
@@ -106,7 +107,6 @@ this module.
 type alias Model =
     { authApiRoot : String
     , innerModel : Private
-    , state : AuthenticationState
     }
 
 
@@ -131,6 +131,11 @@ liftModel model =
 -}
 lowerModel : AuthState -> Model -> Model
 lowerModel inner model =
+    { model | innerModel = Private inner }
+
+
+extractAuthenticationState : Model -> AuthenticationState
+extractAuthenticationState model =
     let
         extract : AuthState.State p { auth : AuthenticatedModel } -> { scopes : List String, subject : String }
         extract state =
@@ -139,25 +144,28 @@ lowerModel inner model =
                     AuthState.untag state
             in
                 { scopes = authModel.auth.scopes, subject = authModel.auth.subject }
+
+        (Private inner) =
+            model.innerModel
     in
         case inner of
             AuthState.LoggedOut _ ->
-                { model | innerModel = Private inner, state = LoggedOut }
+                LoggedOut
 
             AuthState.Restoring _ ->
-                { model | innerModel = Private inner, state = LoggedOut }
+                LoggedOut
 
             AuthState.Attempting _ ->
-                { model | innerModel = Private inner, state = LoggedOut }
+                LoggedOut
 
             AuthState.Failed _ ->
-                { model | innerModel = Private inner, state = Failed }
+                Failed
 
             AuthState.LoggedIn state ->
-                { model | innerModel = Private inner, state = LoggedIn <| extract state }
+                LoggedIn <| extract state
 
             AuthState.Refreshing state ->
-                { model | innerModel = Private inner, state = LoggedIn <| extract state }
+                LoggedIn <| extract state
 
 
 {-| Describes the events this controller responds to.
@@ -178,7 +186,6 @@ init : Config -> Model
 init config =
     { authApiRoot = config.authApiRoot
     , innerModel = Private AuthState.loggedOut
-    , state = LoggedOut
     }
 
 

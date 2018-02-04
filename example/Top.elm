@@ -97,7 +97,7 @@ view : Model -> Html Msg
 view model =
     let
         innerHtml =
-            case model.auth.state of
+            case Auth.extractAuthenticationState model.auth of
                 LoggedOut ->
                     loginView model
 
