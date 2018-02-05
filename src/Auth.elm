@@ -7,7 +7,7 @@ module Auth
         , refresh
         , logout
         , unauthed
-        , extractStatus
+        , getStatus
         , Model
         , Msg
         , init
@@ -17,7 +17,7 @@ module Auth
 {-| Maintains the auth state and follows the TEA pattern to provide a stateful auth
 module that can be wired in to TEA applications update cycles.
 @docs Model, Msg
-@docs init, logonAttempted, update, updateFromMsg, extractStatus
+@docs init, logonAttempted, update, updateFromMsg, getStatus
 -}
 
 import Date exposing (Date)
@@ -96,8 +96,8 @@ unauthed tagger =
     NotAuthed |> tagger |> message
 
 
-extractStatus : Model -> Status
-extractStatus model =
+getStatus : Model -> Status
+getStatus model =
     let
         extract : AuthState.State p { auth : Authenticated } -> { scopes : List String, subject : String }
         extract state =
@@ -171,15 +171,15 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         ( innerModel, cmds ) =
-            liftModel model |> innerUpdate model.authApiRoot msg
+            getAuthState model |> innerUpdate model.authApiRoot msg
     in
-        ( lowerModel innerModel model, cmds )
+        ( setAuthState innerModel model, cmds )
 
 
 {-| Lifts the inner model out of the model.
 -}
-liftModel : Model -> AuthState.AuthState
-liftModel model =
+getAuthState : Model -> AuthState.AuthState
+getAuthState model =
     let
         (Private inner) =
             model.innerModel
@@ -189,8 +189,8 @@ liftModel model =
 
 {-| Lowers the inner model into the model.
 -}
-lowerModel : AuthState -> Model -> Model
-lowerModel inner model =
+setAuthState : AuthState -> Model -> Model
+setAuthState inner model =
     { model | innerModel = Private inner }
 
 
@@ -278,7 +278,7 @@ toLoggedInFromToken :
 toLoggedInFromToken authApiRoot token decodedToken state =
     let
         authModel =
-            authModelFromToken token decodedToken
+            authenticatedFromToken token decodedToken
     in
         ( AuthState.toLoggedInWithAuthenticated authModel state
         , delayedRefreshCmd authApiRoot authModel
@@ -286,7 +286,7 @@ toLoggedInFromToken authApiRoot token decodedToken state =
 
 
 
-{- Helper functions over the auth model. -}
+-- Helper functions for manipluating the model.
 
 
 refreshTimeFromToken : Token -> Date
@@ -294,8 +294,8 @@ refreshTimeFromToken token =
     (Date.toTime token.exp) - 30 * Time.second |> Date.fromTime
 
 
-authModelFromToken : String -> Token -> Authenticated
-authModelFromToken rawToken token =
+authenticatedFromToken : String -> Token -> Authenticated
+authenticatedFromToken rawToken token =
     { token = rawToken
     , decodedToken = token
     , scopes = token.scopes
@@ -303,6 +303,14 @@ authModelFromToken rawToken token =
     , subject = token.sub
     , refreshFrom = refreshTimeFromToken token
     }
+
+
+authRequestFromCredentials : Credentials -> Model.AuthRequest
+authRequestFromCredentials credentials =
+    Model.AuthRequest
+        { username = credentials.username
+        , password = credentials.password
+        }
 
 
 
@@ -324,11 +332,3 @@ tokenExpiryTask root refreshDate =
         Time.now
             |> andThen (\now -> Process.sleep <| delay refreshDate now)
             |> andThen (\_ -> Auth.Service.refreshTask root |> Http.toTask)
-
-
-authRequestFromCredentials : Credentials -> Model.AuthRequest
-authRequestFromCredentials credentials =
-    Model.AuthRequest
-        { username = credentials.username
-        , password = credentials.password
-        }
