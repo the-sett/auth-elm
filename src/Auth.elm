@@ -234,16 +234,12 @@ innerUpdate authApiRoot msg authState =
                     failed state
 
                 Ok (Model.AuthResponse response) ->
-                    let
-                        maybeToken =
-                            Jwt.decode response.token
-                    in
-                        case maybeToken of
-                            Nothing ->
-                                noop authState
+                    case Jwt.decode response.token of
+                        Nothing ->
+                            noop authState
 
-                            Just decodedToken ->
-                                (toLoggedInFromToken authApiRoot) response.token decodedToken state
+                        Just decodedToken ->
+                            toLoggedInFromToken authApiRoot response.token decodedToken state
 
         ( RefreshResponse result, AuthState.Refreshing state ) ->
             case result of
@@ -251,16 +247,12 @@ innerUpdate authApiRoot msg authState =
                     reset
 
                 Ok (Model.AuthResponse response) ->
-                    let
-                        maybeToken =
-                            Jwt.decode response.token
-                    in
-                        case maybeToken of
-                            Nothing ->
-                                noop authState
+                    case Jwt.decode response.token of
+                        Nothing ->
+                            noop authState
 
-                            Just decodedToken ->
-                                (toLoggedInFromToken authApiRoot) response.token decodedToken state
+                        Just decodedToken ->
+                            toLoggedInFromToken authApiRoot response.token decodedToken state
 
         ( LogOutResponse result, _ ) ->
             reset
