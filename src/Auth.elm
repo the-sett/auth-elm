@@ -22,13 +22,10 @@ module that can be wired in to TEA applications update cycles.
 
 import Date exposing (Date)
 import Time
-import Task exposing (andThen)
+import Task
 import Process
 import Http
 import Result
-import Json.Encode as Encode
-import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Extra exposing ((|:), withDefault)
 import Jwt exposing (Token)
 import Auth.Service
 import Model
@@ -320,5 +317,5 @@ tokenExpiryTask root refreshDate =
             max 0 ((Date.toTime refreshDate) - now)
     in
         Time.now
-            |> andThen (\now -> Process.sleep <| delay refreshDate now)
-            |> andThen (\_ -> Auth.Service.refreshTask root |> Http.toTask)
+            |> Task.andThen (\now -> Process.sleep <| delay refreshDate now)
+            |> Task.andThen (\_ -> Auth.Service.refreshTask root |> Http.toTask)
