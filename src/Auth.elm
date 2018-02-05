@@ -67,33 +67,33 @@ type Status
 
 {-| Requests that a login be performed.
 -}
-login : Credentials -> (Msg -> msg) -> Cmd msg
-login authRequest tagger =
-    LogIn authRequest |> tagger |> message
+login : Credentials -> Cmd Msg
+login authRequest =
+    LogIn authRequest |> message
 
 
 {-| Requests that an attempt be made to refresh the auth token from the refresh
 token.
 -}
-refresh : (Msg -> msg) -> Cmd msg
-refresh tagger =
-    Refresh |> tagger |> message
+refresh : Cmd Msg
+refresh =
+    Refresh |> message
 
 
 {-| Requests that a logout (including notifying the server of the logout) be
 performed.
 -}
-logout : (Msg -> msg) -> Cmd msg
-logout tagger =
-    LogOut |> tagger |> message
+logout : Cmd Msg
+logout =
+    LogOut |> message
 
 
 {-| Requests that the auth state be cleared to the LoggedOut state. Usually in
 response to receiving a 401 or 403 error from a server.
 -}
-unauthed : (Msg -> msg) -> Cmd msg
-unauthed tagger =
-    NotAuthed |> tagger |> message
+unauthed : Cmd Msg
+unauthed =
+    NotAuthed |> message
 
 
 getStatus : Model -> Status

@@ -61,7 +61,7 @@ init =
       , username = ""
       , password = ""
       }
-    , Auth.refresh AuthMsg
+    , Auth.refresh |> Cmd.map AuthMsg
     )
 
 
@@ -75,10 +75,10 @@ update action model =
             lift .auth (\m x -> { m | auth = x }) AuthMsg Auth.update msg model
 
         LogIn ->
-            ( model, Auth.login { username = model.username, password = model.password } AuthMsg )
+            ( model, Auth.login { username = model.username, password = model.password } |> Cmd.map AuthMsg )
 
         TryAgain ->
-            ( { model | username = "", password = "", mdl = Material.model }, Auth.unauthed AuthMsg )
+            ( { model | username = "", password = "", mdl = Material.model }, Auth.unauthed |> Cmd.map AuthMsg )
 
         UpdateUsername str ->
             ( { model | username = str }, Cmd.none )
