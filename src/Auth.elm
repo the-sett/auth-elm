@@ -14,10 +14,13 @@ module Auth
         , update
         )
 
-{-| Maintains the auth state and follows the TEA pattern to provide a stateful auth
-module that can be wired in to TEA applications update cycles.
-@docs Model, Msg
-@docs init, logonAttempted, update, updateFromMsg, getStatus
+{-| Manages the state of the authentication process, and provides an API
+to request authentication operations.
+
+@docs Config , Credentials , Status(..)
+@docs login , refresh , logout , unauthed , getStatus
+@docs Model , Msg , init , update
+
 -}
 
 import Date exposing (Date)
@@ -36,6 +39,8 @@ import Utils exposing (message)
 -- The Auth API
 
 
+{-| The configuration specifying the API root to authenticate against.
+-}
 type alias Config =
     { authApiRoot : String
     }
@@ -91,6 +96,8 @@ unauthed =
     NotAuthed |> message
 
 
+{-| Extracts a summary view of the authentication status from the model.
+-}
 getStatus : Model -> Status
 getStatus model =
     let
@@ -162,6 +169,8 @@ init config =
     }
 
 
+{-| Updates the model from Auth commands.
+-}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
