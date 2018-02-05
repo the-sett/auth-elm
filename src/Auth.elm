@@ -2,12 +2,12 @@ module Auth
     exposing
         ( Config
         , Credentials
-        , AuthenticationState(..)
+        , Status(..)
         , login
         , refresh
         , logout
         , unauthed
-        , extractAuthenticationState
+        , extractStatus
         , Model
         , Msg
         , init
@@ -17,7 +17,7 @@ module Auth
 {-| Maintains the auth state and follows the TEA pattern to provide a stateful auth
 module that can be wired in to TEA applications update cycles.
 @docs Model, Msg
-@docs init, logonAttempted, update, updateFromMsg, extractAuthenticationState
+@docs init, logonAttempted, update, updateFromMsg, extractStatus
 -}
 
 import Date exposing (Date)
@@ -56,7 +56,7 @@ type alias Credentials =
 
 {-| Auth states of interest to the consumer.
 -}
-type AuthenticationState
+type Status
     = Failed
     | LoggedOut
     | LoggedIn
@@ -96,8 +96,8 @@ unauthed tagger =
     NotAuthed |> tagger |> message
 
 
-extractAuthenticationState : Model -> AuthenticationState
-extractAuthenticationState model =
+extractStatus : Model -> Status
+extractStatus model =
     let
         extract : AuthState.State p { auth : Authenticated } -> { scopes : List String, subject : String }
         extract state =

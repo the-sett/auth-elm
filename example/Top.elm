@@ -9,7 +9,7 @@ module Top exposing (init, update, view, Model, Msg)
 import Html exposing (Html, div, img, h4, text, span)
 import Html.Attributes exposing (class, src)
 import Config exposing (config)
-import Auth exposing (AuthenticationState(..))
+import Auth exposing (Status(..))
 import UpdateUtils exposing (lift)
 import ViewUtils
 import Material
@@ -97,7 +97,7 @@ view : Model -> Html Msg
 view model =
     let
         innerHtml =
-            case Auth.extractAuthenticationState model.auth of
+            case Auth.extractStatus model.auth of
                 LoggedOut ->
                     loginView model
 
