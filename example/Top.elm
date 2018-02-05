@@ -72,7 +72,7 @@ update action model =
             Material.update Mdl action_ model
 
         AuthMsg msg ->
-            lift .auth (\m x -> { m | auth = x }) AuthMsg Auth.update msg model
+            lift .auth (\x m -> { m | auth = x }) AuthMsg Auth.update msg model
 
         LogIn ->
             ( model, Auth.login { username = model.username, password = model.password } |> Cmd.map AuthMsg )

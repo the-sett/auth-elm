@@ -9,15 +9,15 @@ and messages into a parent one.
 -}
 lift :
     (model -> submodel)
-    -> (model -> submodel -> model)
+    -> (submodel -> model -> model)
     -> (subaction -> action)
     -> (subaction -> submodel -> ( submodel, Cmd subaction ))
     -> subaction
     -> model
     -> ( model, Cmd action )
-lift get set fwd update action model =
+lift get set tagger update action model =
     let
-        ( submodel_, e ) =
+        ( updatedSubModel, msg ) =
             update action (get model)
     in
-        ( set model submodel_, Cmd.map fwd e )
+        ( set updatedSubModel model, Cmd.map tagger msg )
