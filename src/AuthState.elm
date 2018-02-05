@@ -1,7 +1,7 @@
 module AuthState
     exposing
         ( AuthState(..)
-        , AuthenticatedModel
+        , Authenticated
           -- Convenience re-exports from StateMachine
         , State
         , Allowed
@@ -9,12 +9,12 @@ module AuthState
           -- Constructors
         , loggedOut
           -- Map
-        , mapAuthenticatedModel
+        , mapAuthenticated
           -- State transitions
         , toRestoring
         , toAttempting
         , toFailed
-        , toLoggedInWithAuthenticatedModel
+        , toLoggedInWithAuthenticated
         , toRefreshing
         )
 
@@ -36,7 +36,7 @@ type alias Allowed =
     StateMachine.Allowed
 
 
-type alias AuthenticatedModel =
+type alias Authenticated =
     { subject : String
     , scopes : List String
     , token : String
@@ -54,8 +54,8 @@ type AuthState
     | Restoring (State { loggedIn : Allowed } {})
     | Attempting (State { loggedIn : Allowed, failed : Allowed } {})
     | Failed (State {} {})
-    | LoggedIn (State { refreshing : Allowed } { auth : AuthenticatedModel })
-    | Refreshing (State { loggedIn : Allowed } { auth : AuthenticatedModel })
+    | LoggedIn (State { refreshing : Allowed } { auth : Authenticated })
+    | Refreshing (State { loggedIn : Allowed } { auth : Authenticated })
 
 
 
@@ -82,12 +82,12 @@ failed =
     State {} |> Failed
 
 
-loggedIn : AuthenticatedModel -> AuthState
+loggedIn : Authenticated -> AuthState
 loggedIn model =
     State { auth = model } |> LoggedIn
 
 
-refreshing : AuthenticatedModel -> AuthState
+refreshing : Authenticated -> AuthState
 refreshing model =
     State { auth = model } |> Refreshing
 
@@ -101,11 +101,11 @@ mapAuth func =
     \model -> { model | auth = func model.auth }
 
 
-mapAuthenticatedModel :
-    (AuthenticatedModel -> AuthenticatedModel)
-    -> State p { m | auth : AuthenticatedModel }
-    -> State p { m | auth : AuthenticatedModel }
-mapAuthenticatedModel func state =
+mapAuthenticated :
+    (Authenticated -> Authenticated)
+    -> State p { m | auth : Authenticated }
+    -> State p { m | auth : Authenticated }
+mapAuthenticated func state =
     map (mapAuth func) state
 
 
@@ -129,11 +129,11 @@ toFailed _ =
     failed
 
 
-toLoggedInWithAuthenticatedModel : AuthenticatedModel -> State { a | loggedIn : Allowed } m -> AuthState
-toLoggedInWithAuthenticatedModel authModel _ =
+toLoggedInWithAuthenticated : Authenticated -> State { a | loggedIn : Allowed } m -> AuthState
+toLoggedInWithAuthenticated authModel _ =
     loggedIn authModel
 
 
-toRefreshing : State { a | refreshing : Allowed } { m | auth : AuthenticatedModel } -> AuthState
+toRefreshing : State { a | refreshing : Allowed } { m | auth : Authenticated } -> AuthState
 toRefreshing (State model) =
     refreshing model.auth

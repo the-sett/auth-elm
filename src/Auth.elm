@@ -34,7 +34,7 @@ import Json.Decode.Extra exposing ((|:), withDefault)
 import Jwt exposing (Token)
 import Auth.Service
 import Model
-import AuthState exposing (AuthState, AuthenticatedModel)
+import AuthState exposing (AuthState, Authenticated)
 import Utils exposing (message)
 
 
@@ -99,7 +99,7 @@ unauthed tagger =
 extractAuthenticationState : Model -> AuthenticationState
 extractAuthenticationState model =
     let
-        extract : AuthState.State p { auth : AuthenticatedModel } -> { scopes : List String, subject : String }
+        extract : AuthState.State p { auth : Authenticated } -> { scopes : List String, subject : String }
         extract state =
             let
                 authModel =
@@ -280,7 +280,7 @@ toLoggedInFromToken authApiRoot token decodedToken state =
         authModel =
             authModelFromToken token decodedToken
     in
-        ( AuthState.toLoggedInWithAuthenticatedModel authModel state
+        ( AuthState.toLoggedInWithAuthenticated authModel state
         , delayedRefreshCmd authApiRoot authModel
         )
 
@@ -294,7 +294,7 @@ refreshTimeFromToken token =
     (Date.toTime token.exp) - 30 * Time.second |> Date.fromTime
 
 
-authModelFromToken : String -> Token -> AuthenticatedModel
+authModelFromToken : String -> Token -> Authenticated
 authModelFromToken rawToken token =
     { token = rawToken
     , decodedToken = token
@@ -309,7 +309,7 @@ authModelFromToken rawToken token =
 -- Functions for building and executing the refresh cycle task.
 
 
-delayedRefreshCmd : String -> AuthenticatedModel -> Cmd Msg
+delayedRefreshCmd : String -> Authenticated -> Cmd Msg
 delayedRefreshCmd authApiRoot model =
     tokenExpiryTask authApiRoot model.refreshFrom
         |> Task.attempt (\result -> RefreshResponse result)
