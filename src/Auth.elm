@@ -2,6 +2,7 @@ module Auth
     exposing
         ( Config
         , Credentials
+        , AuthenticationState(..)
         , login
         , refresh
         , logout
@@ -9,7 +10,6 @@ module Auth
         , extractAuthenticationState
         , Model
         , Msg
-        , AuthenticationState(..)
         , init
         , update
         )
@@ -54,6 +54,17 @@ type alias Credentials =
     }
 
 
+{-| Auth states of interest to the consumer.
+-}
+type AuthenticationState
+    = Failed
+    | LoggedOut
+    | LoggedIn
+        { scopes : List String
+        , subject : String
+        }
+
+
 {-| Requests that a login be performed.
 -}
 login : Credentials -> (Msg -> msg) -> Cmd msg
@@ -83,55 +94,6 @@ response to receiving a 401 or 403 error from a server.
 unauthed : (Msg -> msg) -> Cmd msg
 unauthed tagger =
     NotAuthed |> tagger |> message
-
-
-{-| Auth states of interest to the consumer.
--}
-type AuthenticationState
-    = Failed
-    | LoggedOut
-    | LoggedIn
-        { scopes : List String
-        , subject : String
-        }
-
-
-
--- TEA encapsulation of this module.
-
-
-{-| The complete state of this auth module. The 'innerModel' is opaque and holds
-the private state. The 'state' provides the state as visible to the consumer of
-this module.
--}
-type alias Model =
-    { authApiRoot : String
-    , innerModel : Private
-    }
-
-
-{-| Puts an opaque wrapper around the inner model to keep it private (unreadable).
--}
-type Private
-    = Private AuthState.AuthState
-
-
-{-| Lifts the inner model out of the model.
--}
-liftModel : Model -> AuthState.AuthState
-liftModel model =
-    let
-        (Private inner) =
-            model.innerModel
-    in
-        inner
-
-
-{-| Lowers the inner model into the model.
--}
-lowerModel : AuthState -> Model -> Model
-lowerModel inner model =
-    { model | innerModel = Private inner }
 
 
 extractAuthenticationState : Model -> AuthenticationState
@@ -168,6 +130,22 @@ extractAuthenticationState model =
                 LoggedIn <| extract state
 
 
+{-| The complete state of this auth module. The 'innerModel' is opaque and holds
+the private state. The 'state' provides the state as visible to the consumer of
+this module.
+-}
+type alias Model =
+    { authApiRoot : String
+    , innerModel : Private
+    }
+
+
+{-| Puts an opaque wrapper around the inner model to keep it private (unreadable).
+-}
+type Private
+    = Private AuthState.AuthState
+
+
 {-| Describes the events this controller responds to.
 -}
 type Msg
@@ -196,6 +174,24 @@ update msg model =
             liftModel model |> innerUpdate model.authApiRoot msg
     in
         ( lowerModel innerModel model, cmds )
+
+
+{-| Lifts the inner model out of the model.
+-}
+liftModel : Model -> AuthState.AuthState
+liftModel model =
+    let
+        (Private inner) =
+            model.innerModel
+    in
+        inner
+
+
+{-| Lowers the inner model into the model.
+-}
+lowerModel : AuthState -> Model -> Model
+lowerModel inner model =
+    { model | innerModel = Private inner }
 
 
 noop authState =
