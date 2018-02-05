@@ -17,7 +17,7 @@ module Auth
 {-| Manages the state of the authentication process, and provides an API
 to request authentication operations.
 
-@docs Config , Credentials , Status(..)
+@docs Config , Credentials , Status
 @docs login , refresh , logout , unauthed , getStatus
 @docs Model , Msg , init , update
 
