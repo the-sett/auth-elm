@@ -5,7 +5,6 @@ import Dict exposing (Dict)
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Extra exposing ((|:), withDefault)
 import Json.Encode as Encode exposing (..)
-import Exts.Maybe exposing (catMaybes)
 
 
 type AuthRequest

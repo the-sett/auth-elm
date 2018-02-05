@@ -22,10 +22,8 @@ module that can be wired in to TEA applications update cycles.
 
 import Date exposing (Date)
 import Time
-import Maybe.Extra
 import Task exposing (andThen)
 import Process
-import Navigation
 import Http
 import Result
 import Json.Encode as Encode
