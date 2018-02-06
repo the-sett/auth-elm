@@ -215,7 +215,7 @@ auth server.
 -}
 innerUpdate : String -> Msg -> AuthState -> ( AuthState, Cmd Msg )
 innerUpdate authApiRoot msg authState =
-    case ( Debug.log "auth" msg, authState ) of
+    case ( msg, authState ) of
         ( LogIn credentials, AuthState.LoggedOut state ) ->
             ( AuthState.toAttempting state
             , Auth.Service.invokeLogin authApiRoot LogInResponse (authRequestFromCredentials credentials)
