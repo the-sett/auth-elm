@@ -7,7 +7,6 @@ module Auth
         , refresh
         , logout
         , unauthed
-        , getStatus
         , Model
         , Msg
         , init
@@ -18,7 +17,7 @@ module Auth
 to request authentication operations.
 
 @docs Config , Credentials , Status
-@docs login , refresh , logout , unauthed , getStatus
+@docs login , refresh , logout , unauthed
 @docs Model , Msg , init , update
 
 -}
@@ -96,42 +95,6 @@ unauthed =
     NotAuthed |> message
 
 
-{-| Extracts a summary view of the authentication status from the model.
--}
-getStatus : Model -> Status
-getStatus model =
-    let
-        extract : AuthState.State p { auth : Authenticated } -> { scopes : List String, subject : String }
-        extract state =
-            let
-                authModel =
-                    AuthState.untag state
-            in
-                { scopes = authModel.auth.scopes, subject = authModel.auth.subject }
-
-        (Private inner) =
-            model.innerModel
-    in
-        case inner of
-            AuthState.LoggedOut _ ->
-                LoggedOut
-
-            AuthState.Restoring _ ->
-                LoggedOut
-
-            AuthState.Attempting _ ->
-                LoggedOut
-
-            AuthState.Failed _ ->
-                Failed
-
-            AuthState.LoggedIn state ->
-                LoggedIn <| extract state
-
-            AuthState.Refreshing state ->
-                LoggedIn <| extract state
-
-
 {-| The complete state of this auth module. The 'innerModel' is opaque and holds
 the private state. The 'state' provides the state as visible to the consumer of
 this module.
@@ -198,21 +161,80 @@ setAuthState inner model =
     { model | innerModel = Private inner }
 
 
+{-| Extracts a summary view of the authentication status from the model.
+-}
+getStatus : AuthState -> Status
+getStatus authState =
+    let
+        extract : AuthState.State p { auth : Authenticated } -> { scopes : List String, subject : String }
+        extract state =
+            let
+                authModel =
+                    AuthState.untag state
+            in
+                { scopes = authModel.auth.scopes, subject = authModel.auth.subject }
+    in
+        case authState of
+            AuthState.LoggedOut _ ->
+                LoggedOut
+
+            AuthState.Restoring _ ->
+                LoggedOut
+
+            AuthState.Attempting _ ->
+                LoggedOut
+
+            AuthState.Failed _ ->
+                Failed
+
+            AuthState.LoggedIn state ->
+                LoggedIn <| extract state
+
+            AuthState.Refreshing state ->
+                LoggedIn <| extract state
+
+
 noop authState =
     ( authState, Cmd.none, Nothing )
 
 
 reset authState =
-    ( AuthState.loggedOut, Cmd.none, Nothing )
+    let
+        newAuthState =
+            AuthState.loggedOut
+    in
+        ( newAuthState, Cmd.none, statusChange authState newAuthState )
 
 
 failed authState state =
-    ( AuthState.toFailed state, Cmd.none, Nothing )
+    let
+        newAuthState =
+            AuthState.toFailed state
+    in
+        ( newAuthState, Cmd.none, statusChange authState newAuthState )
 
 
 statusChange : AuthState -> AuthState -> Maybe Status
-statusChange oldState newState =
-    Nothing
+statusChange oldAuthState newAuthState =
+    let
+        oldStatus =
+            getStatus oldAuthState
+
+        newStatus =
+            getStatus newAuthState
+    in
+        case ( oldStatus, newStatus ) of
+            ( LoggedIn _, LoggedIn _ ) ->
+                Nothing
+
+            ( Failed, Failed ) ->
+                Nothing
+
+            ( LoggedOut, LoggedOut ) ->
+                Nothing
+
+            ( _, _ ) ->
+                Just newStatus
 
 
 {-| Updates the auth state and triggers events needed to communicate with the

@@ -25,6 +25,7 @@ import OutMessage
 -}
 type alias Model =
     { auth : Auth.Model
+    , authStatus : Auth.Status
     , mdl : Material.Model
     , username : String
     , password : String
@@ -58,6 +59,7 @@ init =
             Auth.init
                 { authApiRoot = config.authRoot
                 }
+      , authStatus = Auth.LoggedOut
       , mdl = Material.model
       , username = ""
       , password = ""
@@ -76,7 +78,7 @@ update action model =
             Auth.update msg model.auth
                 |> OutMessage.mapComponent (\auth -> { model | auth = auth })
                 |> OutMessage.mapCmd AuthMsg
-                |> OutMessage.evaluateMaybe (\status -> \model -> ( model, Cmd.none )) Cmd.none
+                |> OutMessage.evaluateMaybe (\status -> \model -> ( { model | authStatus = status }, Cmd.none )) Cmd.none
 
         LogIn ->
             ( model, Auth.login { username = model.username, password = model.password } |> Cmd.map AuthMsg )
@@ -101,7 +103,7 @@ view : Model -> Html Msg
 view model =
     let
         innerHtml =
-            case Auth.getStatus model.auth of
+            case model.authStatus of
                 LoggedOut ->
                     loginView model
 
