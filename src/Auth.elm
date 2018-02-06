@@ -262,7 +262,7 @@ innerUpdate authApiRoot msg authState =
             reset
 
         ( _, _ ) ->
-            noop authState
+            Debug.log "noop" <| noop authState
 
 
 toLoggedInFromToken :
@@ -283,11 +283,9 @@ toLoggedInFromToken authApiRoot token decodedToken state =
 
 
 -- Helper functions for manipluating the model.
-
-
-refreshTimeFromToken : Token -> Date
-refreshTimeFromToken token =
-    (Date.toTime token.exp) - 30 * Time.second |> Date.fromTime
+-- refreshTimeFromToken : Token -> Date
+-- refreshTimeFromToken token =
+--     (Date.toTime token.exp) - 30 * Time.second |> Date.fromTime
 
 
 authenticatedFromToken : String -> Token -> Authenticated
@@ -297,7 +295,7 @@ authenticatedFromToken rawToken token =
     , scopes = token.scopes
     , expiresAt = token.exp
     , subject = token.sub
-    , refreshFrom = refreshTimeFromToken token
+    , refreshFrom = token.exp
     }
 
 
@@ -316,15 +314,28 @@ authRequestFromCredentials credentials =
 delayedRefreshCmd : String -> Authenticated -> Cmd Msg
 delayedRefreshCmd authApiRoot model =
     tokenExpiryTask authApiRoot model.refreshFrom
-        |> Task.attempt (\result -> RefreshResponse result)
+        |> Task.attempt (\_ -> Refresh)
 
 
-tokenExpiryTask : String -> Date -> Task.Task Http.Error Model.AuthResponse
+{-| A delay task that should end 30 seconds before the token is due to expire.
+If the token expiry is less than 1 minute away, the delay is set to half of the remaining
+time, which should be under 30 seconds.
+The delay will expire immediately if the token expiry is already in the past.
+-}
+tokenExpiryTask : String -> Date -> Task.Task Never ()
 tokenExpiryTask root refreshDate =
     let
+        safeInterval =
+            30 * Time.second
+
         delay refreshDate now =
-            max 0 ((Date.toTime refreshDate) - now)
+            let
+                refreshTime =
+                    (Date.toTime refreshDate)
+            in
+                max ((refreshTime - now) / 2) (refreshTime - now - safeInterval)
+                    |> max 0
+                    |> Debug.log "refresh in"
     in
         Time.now
             |> Task.andThen (\now -> Process.sleep <| delay refreshDate now)
-            |> Task.andThen (\_ -> Auth.Service.refreshTask root |> Http.toTask)
