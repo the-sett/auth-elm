@@ -171,13 +171,13 @@ init config =
 
 {-| Updates the model from Auth commands.
 -}
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg, Maybe Status )
 update msg model =
     let
-        ( innerModel, cmds ) =
+        ( innerModel, cmds, maybeStatus ) =
             getAuthState model |> innerUpdate model.authApiRoot msg
     in
-        ( setAuthState innerModel model, cmds )
+        ( setAuthState innerModel model, cmds, maybeStatus )
 
 
 {-| Lifts the inner model out of the model.
@@ -199,43 +199,53 @@ setAuthState inner model =
 
 
 noop authState =
-    ( authState, Cmd.none )
+    ( authState, Cmd.none, Nothing )
 
 
-reset =
-    ( AuthState.loggedOut, Cmd.none )
+reset authState =
+    ( AuthState.loggedOut, Cmd.none, Nothing )
 
 
-failed state =
-    ( AuthState.toFailed state, Cmd.none )
+failed authState state =
+    ( AuthState.toFailed state, Cmd.none, Nothing )
+
+
+statusChange : AuthState -> AuthState -> Maybe Status
+statusChange oldState newState =
+    Nothing
 
 
 {-| Updates the auth state and triggers events needed to communicate with the
 auth server.
 -}
-innerUpdate : String -> Msg -> AuthState -> ( AuthState, Cmd Msg )
+innerUpdate : String -> Msg -> AuthState -> ( AuthState, Cmd Msg, Maybe Status )
 innerUpdate authApiRoot msg authState =
     case ( msg, authState ) of
         ( LogIn credentials, AuthState.LoggedOut state ) ->
             ( AuthState.toAttempting state
             , Auth.Service.invokeLogin authApiRoot LogInResponse (authRequestFromCredentials credentials)
+            , statusChange authState authState
             )
 
         ( Refresh, AuthState.LoggedIn state ) ->
             ( AuthState.toRefreshing state
             , Auth.Service.invokeRefresh authApiRoot RefreshResponse
+            , statusChange authState authState
             )
 
         ( LogOut, _ ) ->
-            ( authState, Auth.Service.invokeLogout authApiRoot LogOutResponse )
+            ( authState
+            , Auth.Service.invokeLogout authApiRoot LogOutResponse
+            , statusChange authState authState
+            )
 
         ( NotAuthed, _ ) ->
-            reset
+            reset authState
 
         ( LogInResponse result, AuthState.Attempting state ) ->
             case result of
                 Err _ ->
-                    failed state
+                    failed authState state
 
                 Ok (Model.AuthResponse response) ->
                     case Jwt.decode response.token of
@@ -248,7 +258,7 @@ innerUpdate authApiRoot msg authState =
         ( RefreshResponse result, AuthState.Refreshing state ) ->
             case result of
                 Err _ ->
-                    reset
+                    reset authState
 
                 Ok (Model.AuthResponse response) ->
                     case Jwt.decode response.token of
@@ -259,10 +269,10 @@ innerUpdate authApiRoot msg authState =
                             toLoggedInFromToken authApiRoot response.token decodedToken state
 
         ( LogOutResponse result, _ ) ->
-            reset
+            reset authState
 
         ( _, _ ) ->
-            Debug.log "noop" <| noop authState
+            noop authState
 
 
 toLoggedInFromToken :
@@ -270,7 +280,7 @@ toLoggedInFromToken :
     -> String
     -> Token
     -> AuthState.State { p | loggedIn : AuthState.Allowed } m
-    -> ( AuthState, Cmd Msg )
+    -> ( AuthState, Cmd Msg, Maybe Status )
 toLoggedInFromToken authApiRoot token decodedToken state =
     let
         authModel =
@@ -278,6 +288,7 @@ toLoggedInFromToken authApiRoot token decodedToken state =
     in
         ( AuthState.toLoggedInWithAuthenticated authModel state
         , delayedRefreshCmd authApiRoot authModel
+        , statusChange (AuthState.toLoggedInWithAuthenticated authModel state) (AuthState.toLoggedInWithAuthenticated authModel state)
         )
 
 
@@ -335,7 +346,6 @@ tokenExpiryTask root refreshDate =
             in
                 max ((refreshTime - now) / 2) (refreshTime - now - safeInterval)
                     |> max 0
-                    |> Debug.log "refresh in"
     in
         Time.now
             |> Task.andThen (\now -> Process.sleep <| delay refreshDate now)
