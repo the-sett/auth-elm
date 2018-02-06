@@ -194,26 +194,6 @@ getStatus authState =
                 LoggedIn <| extract state
 
 
-noop authState =
-    ( authState, Cmd.none, Nothing )
-
-
-reset authState =
-    let
-        newAuthState =
-            AuthState.loggedOut
-    in
-        ( newAuthState, Cmd.none, statusChange authState newAuthState )
-
-
-failed authState state =
-    let
-        newAuthState =
-            AuthState.toFailed state
-    in
-        ( newAuthState, Cmd.none, statusChange authState newAuthState )
-
-
 statusChange : AuthState -> AuthState -> Maybe Status
 statusChange oldAuthState newAuthState =
     let
@@ -237,6 +217,26 @@ statusChange oldAuthState newAuthState =
                 Just newStatus
 
 
+noop authState =
+    ( authState, Cmd.none, Nothing )
+
+
+reset authState =
+    let
+        newAuthState =
+            AuthState.loggedOut
+    in
+        ( newAuthState, Cmd.none, statusChange authState newAuthState )
+
+
+failed authState state =
+    let
+        newAuthState =
+            AuthState.toFailed state
+    in
+        ( newAuthState, Cmd.none, statusChange authState newAuthState )
+
+
 {-| Updates the auth state and triggers events needed to communicate with the
 auth server.
 -}
@@ -246,19 +246,19 @@ innerUpdate authApiRoot msg authState =
         ( LogIn credentials, AuthState.LoggedOut state ) ->
             ( AuthState.toAttempting state
             , Auth.Service.invokeLogin authApiRoot LogInResponse (authRequestFromCredentials credentials)
-            , statusChange authState authState
+            , Nothing
             )
 
         ( Refresh, AuthState.LoggedIn state ) ->
             ( AuthState.toRefreshing state
             , Auth.Service.invokeRefresh authApiRoot RefreshResponse
-            , statusChange authState authState
+            , Nothing
             )
 
         ( LogOut, _ ) ->
             ( authState
             , Auth.Service.invokeLogout authApiRoot LogOutResponse
-            , statusChange authState authState
+            , Nothing
             )
 
         ( NotAuthed, _ ) ->
@@ -275,7 +275,7 @@ innerUpdate authApiRoot msg authState =
                             noop authState
 
                         Just decodedToken ->
-                            toLoggedInFromToken authApiRoot response.token decodedToken state
+                            toLoggedInFromToken authApiRoot response.token decodedToken authState state
 
         ( RefreshResponse result, AuthState.Refreshing state ) ->
             case result of
@@ -288,7 +288,7 @@ innerUpdate authApiRoot msg authState =
                             noop authState
 
                         Just decodedToken ->
-                            toLoggedInFromToken authApiRoot response.token decodedToken state
+                            toLoggedInFromToken authApiRoot response.token decodedToken authState state
 
         ( LogOutResponse result, _ ) ->
             reset authState
@@ -301,16 +301,20 @@ toLoggedInFromToken :
     String
     -> String
     -> Token
+    -> AuthState
     -> AuthState.State { p | loggedIn : AuthState.Allowed } m
     -> ( AuthState, Cmd Msg, Maybe Status )
-toLoggedInFromToken authApiRoot token decodedToken state =
+toLoggedInFromToken authApiRoot token decodedToken authState state =
     let
         authModel =
             authenticatedFromToken token decodedToken
+
+        newAuthState =
+            AuthState.toLoggedInWithAuthenticated authModel state
     in
-        ( AuthState.toLoggedInWithAuthenticated authModel state
+        ( newAuthState
         , delayedRefreshCmd authApiRoot authModel
-        , statusChange (AuthState.toLoggedInWithAuthenticated authModel state) (AuthState.toLoggedInWithAuthenticated authModel state)
+        , statusChange authState newAuthState
         )
 
 
