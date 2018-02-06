@@ -1,5 +1,5 @@
 {
-    "version": "2.0.3",
+    "version": "3.0.0",
     "summary": "Elm auth module for interacting with the-sett/auth-service.",
     "repository": "https://github.com/the-sett/auth-elm.git",
     "license": "Apache License, version 2.0",
