@@ -194,6 +194,9 @@ getStatus authState =
                 LoggedIn <| extract state
 
 
+{-| Compares two AuthStates and outputs the status of the newer one, if it differs
+from the older one, otherwise Nothing.
+-}
 statusChange : AuthState -> AuthState -> Maybe Status
 statusChange oldAuthState newAuthState =
     let
@@ -319,10 +322,7 @@ toLoggedInFromToken authApiRoot token decodedToken authState state =
 
 
 
--- Helper functions for manipluating the model.
--- refreshTimeFromToken : Token -> Date
--- refreshTimeFromToken token =
---     (Date.toTime token.exp) - 30 * Time.second |> Date.fromTime
+-- Helper functions for manipuluating the model.
 
 
 authenticatedFromToken : String -> Token -> Authenticated
