@@ -16,7 +16,7 @@
         "truqu/elm-base64": "1.0.5 <= v < 2.0.0",
         "the-sett/elm-state-machines": "1.0.0 <= v < 2.0.0",
         "debois/elm-mdl": "8.1.0 <= v < 9.0.0",
-        "folkertdev/outmessage": "1.1.1 <= v < 2.0.0"
+        "the-sett/elm-update-helper": "1.2.0 <= v < 2.0.0"
     },
     "elm-version": "0.18.0 <= v < 0.19.0"
 }

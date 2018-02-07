@@ -18,7 +18,7 @@ import Material.Icon as Icon
 import Material.Textfield as Textfield
 import Material.Options as Options
 import Material.List as Lists
-import OutMessage
+import Update3
 
 
 {-| The content editor program model.
@@ -75,10 +75,8 @@ update action model =
             Material.update Mdl action_ model
 
         AuthMsg msg ->
-            Auth.update msg model.auth
-                |> OutMessage.mapComponent (\auth -> { model | auth = auth })
-                |> OutMessage.mapCmd AuthMsg
-                |> OutMessage.evaluateMaybe (\status -> \model -> ( { model | authStatus = status }, Cmd.none )) Cmd.none
+            Update3.lift .auth (\x m -> { m | auth = x }) AuthMsg Auth.update msg model
+                |> Update3.evalMaybe (\status -> \model -> ( { model | authStatus = status }, Cmd.none )) Cmd.none
 
         LogIn ->
             ( model, Auth.login { username = model.username, password = model.password } |> Cmd.map AuthMsg )
