@@ -9,7 +9,7 @@ module Top exposing (init, update, view, Model, Msg)
 import Html exposing (Html, div, img, h4, text, span)
 import Html.Attributes exposing (class, src)
 import Config exposing (config)
-import Auth exposing (Status(..))
+import Auth
 import UpdateUtils exposing (lift)
 import ViewUtils
 import Material
@@ -25,11 +25,21 @@ import Update3
 -}
 type alias Model =
     { auth : Auth.Model
-    , authStatus : Auth.Status
+    , session : Session
     , mdl : Material.Model
     , username : String
     , password : String
     }
+
+
+type Session
+    = Initial
+    | LoggedOut
+    | FailedAuth
+    | LoggedIn
+        { scopes : List String
+        , subject : String
+        }
 
 
 {-| The content editor program top-level message types.
@@ -59,7 +69,7 @@ init =
             Auth.init
                 { authApiRoot = config.authRoot
                 }
-      , authStatus = Auth.LoggedOut
+      , session = Initial
       , mdl = Material.model
       , username = ""
       , password = ""
@@ -76,7 +86,7 @@ update action model =
 
         AuthMsg msg ->
             Update3.lift .auth (\x m -> { m | auth = x }) AuthMsg Auth.update msg model
-                |> Update3.evalMaybe (\status -> \model -> ( { model | authStatus = status }, Cmd.none )) Cmd.none
+                |> Update3.evalMaybe (\status -> \model -> ( { model | session = authStatusToSession status }, Cmd.none )) Cmd.none
 
         LogIn ->
             ( model, Auth.login { username = model.username, password = model.password } |> Cmd.map AuthMsg )
@@ -91,6 +101,19 @@ update action model =
             ( { model | password = str }, Cmd.none )
 
 
+authStatusToSession : Auth.Status -> Session
+authStatusToSession status =
+    case status of
+        Auth.LoggedOut ->
+            LoggedOut
+
+        Auth.Failed ->
+            FailedAuth
+
+        Auth.LoggedIn access ->
+            LoggedIn access
+
+
 
 -- View
 
@@ -101,11 +124,14 @@ view : Model -> Html Msg
 view model =
     let
         innerHtml =
-            case model.authStatus of
+            case model.session of
+                Initial ->
+                    initialView model
+
                 LoggedOut ->
                     loginView model
 
-                Failed ->
+                FailedAuth ->
                     notPermittedView model
 
                 LoggedIn state ->
@@ -126,6 +152,29 @@ view model =
             , styleLink "auth-service.css"
             , innerHtml
             ]
+
+
+initialView :
+    { a | mdl : Material.Model }
+    -> Html Msg
+initialView model =
+    div []
+        [ div [ class "layout-fixed-width--one-card" ]
+            [ ViewUtils.rhythm1SpacerDiv
+            , div [ class "mdl-grid" ]
+                [ div [ class "mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp" ]
+                    [ div [ class "mdl-card__media" ]
+                        [ img [ src "images/data_center-large.png" ]
+                            []
+                        ]
+                    , div [ class "mdl-card__title" ]
+                        [ h4 [ class "mdl-card__title-text" ]
+                            [ text "Attempting to Restore" ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
 
 
 loginView :

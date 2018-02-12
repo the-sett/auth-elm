@@ -202,9 +202,11 @@ statusChange oldAuthState newAuthState =
     let
         oldStatus =
             getStatus oldAuthState
+                |> Debug.log "oldStatus"
 
         newStatus =
             getStatus newAuthState
+                |> Debug.log "newStatus"
     in
         case ( oldStatus, newStatus ) of
             ( LoggedIn _, LoggedIn _ ) ->
@@ -245,7 +247,7 @@ auth server.
 -}
 innerUpdate : String -> Msg -> AuthState -> ( AuthState, Cmd Msg, Maybe Status )
 innerUpdate authApiRoot msg authState =
-    case ( msg, authState ) of
+    case ( Debug.log "auth" msg, authState ) of
         ( LogIn credentials, AuthState.LoggedOut state ) ->
             ( AuthState.toAttempting state
             , Auth.Service.invokeLogin authApiRoot LogInResponse (authRequestFromCredentials credentials)
@@ -277,6 +279,19 @@ innerUpdate authApiRoot msg authState =
             case result of
                 Err _ ->
                     failed authState state
+
+                Ok (Model.AuthResponse response) ->
+                    case Jwt.decode response.token of
+                        Nothing ->
+                            noop authState
+
+                        Just decodedToken ->
+                            toLoggedInFromToken authApiRoot response.token decodedToken authState state
+
+        ( RefreshResponse result, AuthState.Restoring state ) ->
+            case result of
+                Err _ ->
+                    ( authState, Cmd.none, Just LoggedOut )
 
                 Ok (Model.AuthResponse response) ->
                     case Jwt.decode response.token of
