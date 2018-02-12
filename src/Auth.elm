@@ -252,6 +252,12 @@ innerUpdate authApiRoot msg authState =
             , Nothing
             )
 
+        ( Refresh, AuthState.LoggedOut state ) ->
+            ( AuthState.toRestoring state
+            , Auth.Service.invokeRefresh authApiRoot RefreshResponse
+            , Nothing
+            )
+
         ( Refresh, AuthState.LoggedIn state ) ->
             ( AuthState.toRefreshing state
             , Auth.Service.invokeRefresh authApiRoot RefreshResponse
