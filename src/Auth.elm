@@ -291,7 +291,7 @@ innerUpdate authApiRoot msg authState =
         ( RefreshResponse result, AuthState.Restoring state ) ->
             case result of
                 Err _ ->
-                    ( authState, Cmd.none, Just LoggedOut )
+                    ( AuthState.loggedOut, Cmd.none, Just LoggedOut )
 
                 Ok (Model.AuthResponse response) ->
                     case Jwt.decode response.token of
