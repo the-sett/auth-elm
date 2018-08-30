@@ -2,7 +2,7 @@ module Model exposing (AuthRequest(..), AuthResponse(..), RefreshRequest(..), au
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (..)
-import Json.Decode.Extra exposing ((|:), withDefault)
+import Json.Decode.Extra exposing (andMap, withDefault)
 import Json.Encode as Encode exposing (..)
 import Set exposing (Set)
 
@@ -31,8 +31,8 @@ authRequestDecoder =
                 , password = password
                 }
         )
-        |: field "username" Decode.string
-        |: field "password" Decode.string
+        |> andMap (field "username" Decode.string)
+        |> andMap (field "password" Decode.string)
 
 
 type RefreshRequest
@@ -56,7 +56,7 @@ refreshRequestDecoder =
                 { refreshToken = refreshToken
                 }
         )
-        |: field "refreshToken" Decode.string
+        |> andMap (field "refreshToken" Decode.string)
 
 
 type AuthResponse
@@ -83,5 +83,5 @@ authResponseDecoder =
                 , refreshToken = refreshToken
                 }
         )
-        |: field "token" Decode.string
-        |: field "refreshToken" Decode.string
+        |> andMap (field "token" Decode.string)
+        |> andMap (field "refreshToken" Decode.string)

@@ -15,7 +15,6 @@ to request authentication operations.
 
 import Auth.Service
 import AuthState exposing (AuthState, Authenticated)
-import Date exposing (Date)
 import Http
 import Jwt exposing (Token)
 import Model

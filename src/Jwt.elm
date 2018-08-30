@@ -7,10 +7,9 @@ module Jwt exposing
     )
 
 import Base64
-import Date exposing (Date)
 import Json.Decode as Decode exposing (Decoder, Value, field)
-import Json.Decode.Extra exposing ((|:), withDefault)
-import Time exposing (Time)
+import Json.Decode.Extra exposing (andMap, withDefault)
+import Time exposing (Posix)
 
 
 type JwtError
@@ -25,8 +24,8 @@ type alias Token =
     { sub : String
     , iss : Maybe String
     , aud : Maybe String
-    , exp : Date
-    , iat : Maybe Date
+    , exp : Posix
+    , iat : Maybe Posix
     , jti : Maybe String
     , scopes : List String
     }
@@ -42,7 +41,7 @@ decodeWithErrors token =
     extractAndDecodeToken tokenDecoder token
 
 
-isExpired : Time -> String -> Bool
+isExpired : Posix -> String -> Bool
 isExpired now token =
     case extractAndDecodeToken (field "exp" Decode.float) token of
         Result.Ok exp ->
@@ -65,19 +64,23 @@ tokenDecoder =
             , scopes = scopes
             }
         )
-        |: Decode.field "sub" Decode.string
-        |: Decode.maybe (Decode.field "iss" Decode.string)
-        |: Decode.maybe (Decode.field "aud" Decode.string)
-        |: Decode.map
-            (Date.fromTime << toFloat << (*) 1000)
-            (Decode.field "exp" Decode.int)
-        |: Decode.maybe
+        |> andMap (Decode.field "sub" Decode.string)
+        |> andMap (Decode.maybe (Decode.field "iss" Decode.string))
+        |> andMap (Decode.maybe (Decode.field "aud" Decode.string))
+        |> andMap
             (Decode.map
                 (Date.fromTime << toFloat << (*) 1000)
-                (Decode.field "iat" Decode.int)
+                (Decode.field "exp" Decode.int)
             )
-        |: Decode.maybe (Decode.field "jti" Decode.string)
-        |: Decode.field "scopes" (Decode.list Decode.string)
+        |> andMap
+            (Decode.maybe
+                (Decode.map
+                    (Date.fromTime << toFloat << (*) 1000)
+                    (Decode.field "iat" Decode.int)
+                )
+            )
+        |> andMap (Decode.maybe (Decode.field "jti" Decode.string))
+        |> andMap (Decode.field "scopes" (Decode.list Decode.string))
 
 
 extractAndDecodeToken : Decode.Decoder a -> String -> Result JwtError a
@@ -113,8 +116,8 @@ extractAndDecodeToken dec s =
 unurl : String -> String
 unurl =
     let
-        fix c =
-            case c of
+        fix ch =
+            case ch of
                 '-' ->
                     '+'
 

@@ -21,7 +21,6 @@ module AuthState exposing
 
     )
 
-import Date exposing (Date)
 import Jwt exposing (Token)
 import StateMachine exposing (Allowed, State(..), map)
 
