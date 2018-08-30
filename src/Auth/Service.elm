@@ -1,11 +1,11 @@
-module Auth.Service exposing (..)
+module Auth.Service exposing (invokeLogin, invokeLogout, invokeRefresh, loginTask, logoutTask, refreshTask, routes)
 
-import Platform.Cmd exposing (Cmd)
-import Result
 import Http
 import Json.Encode as Encode exposing (..)
-import Task exposing (Task)
 import Model exposing (..)
+import Platform.Cmd exposing (Cmd)
+import Result
+import Task exposing (Task)
 
 
 invokeLogin : String -> (Result.Result Http.Error Model.AuthResponse -> msg) -> Model.AuthRequest -> Cmd msg

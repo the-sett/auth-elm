@@ -1,17 +1,16 @@
-module Jwt
-    exposing
-        ( JwtError(..)
-        , Token
-        , decode
-        , decodeWithErrors
-        , isExpired
-        )
+module Jwt exposing
+    ( JwtError(..)
+    , Token
+    , decode
+    , decodeWithErrors
+    , isExpired
+    )
 
-import Date exposing (Date)
 import Base64
-import Time exposing (Time)
-import Json.Decode as Decode exposing (field, Value, Decoder)
+import Date exposing (Date)
+import Json.Decode as Decode exposing (Decoder, Value, field)
 import Json.Decode.Extra exposing ((|:), withDefault)
+import Time exposing (Time)
 
 
 type JwtError
@@ -55,7 +54,7 @@ isExpired now token =
 
 tokenDecoder : Decoder Token
 tokenDecoder =
-    (Decode.succeed
+    Decode.succeed
         (\sub iss aud exp iat jti scopes ->
             { sub = sub
             , iss = iss
@@ -66,20 +65,19 @@ tokenDecoder =
             , scopes = scopes
             }
         )
-    )
-        |: (Decode.field "sub" Decode.string)
+        |: Decode.field "sub" Decode.string
         |: Decode.maybe (Decode.field "iss" Decode.string)
         |: Decode.maybe (Decode.field "aud" Decode.string)
         |: Decode.map
-            (Date.fromTime << toFloat << ((*) 1000))
+            (Date.fromTime << toFloat << (*) 1000)
             (Decode.field "exp" Decode.int)
         |: Decode.maybe
             (Decode.map
-                (Date.fromTime << toFloat << ((*) 1000))
+                (Date.fromTime << toFloat << (*) 1000)
                 (Decode.field "iat" Decode.int)
             )
         |: Decode.maybe (Decode.field "jti" Decode.string)
-        |: (Decode.field "scopes" (Decode.list Decode.string))
+        |: Decode.field "scopes" (Decode.list Decode.string)
 
 
 extractAndDecodeToken : Decode.Decoder a -> String -> Result JwtError a
@@ -91,25 +89,25 @@ extractAndDecodeToken dec s =
         f2 =
             List.map fixlength f1
     in
-        case f2 of
-            _ :: (Result.Err e) :: _ :: [] ->
-                Result.Err e
+    case f2 of
+        _ :: (Result.Err e) :: _ :: [] ->
+            Result.Err e
 
-            _ :: (Result.Ok encBody) :: _ :: [] ->
-                case Base64.decode encBody of
-                    Result.Ok body ->
-                        case Decode.decodeString dec body of
-                            Result.Ok x ->
-                                Result.Ok x
+        _ :: (Result.Ok encBody) :: _ :: [] ->
+            case Base64.decode encBody of
+                Result.Ok body ->
+                    case Decode.decodeString dec body of
+                        Result.Ok x ->
+                            Result.Ok x
 
-                            Result.Err e ->
-                                Result.Err (TokenDecodeError e)
+                        Result.Err e ->
+                            Result.Err (TokenDecodeError e)
 
-                    Result.Err e ->
-                        Result.Err (TokenProcessingError e)
+                Result.Err e ->
+                    Result.Err (TokenProcessingError e)
 
-            _ ->
-                Result.Err <| TokenProcessingError "Token has invalid shape"
+        _ ->
+            Result.Err <| TokenProcessingError "Token has invalid shape"
 
 
 unurl : String -> String
@@ -126,12 +124,12 @@ unurl =
                 c ->
                     c
     in
-        String.map fix
+    String.map fix
 
 
 fixlength : String -> Result JwtError String
 fixlength s =
-    case String.length s % 4 of
+    case modBy 4 (String.length s) of
         0 ->
             Result.Ok s
 

@@ -1,10 +1,10 @@
-module Model exposing (..)
+module Model exposing (AuthRequest(..), AuthResponse(..), RefreshRequest(..), authRequestDecoder, authRequestEncoder, authResponseDecoder, authResponseEncoder, refreshRequestDecoder, refreshRequestEncoder)
 
-import Set exposing (Set)
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Extra exposing ((|:), withDefault)
 import Json.Encode as Encode exposing (..)
+import Set exposing (Set)
 
 
 type AuthRequest
@@ -24,16 +24,15 @@ authRequestEncoder (AuthRequest model) =
 
 authRequestDecoder : Decoder AuthRequest
 authRequestDecoder =
-    (Decode.succeed
+    Decode.succeed
         (\username password ->
             AuthRequest
                 { username = username
                 , password = password
                 }
         )
-    )
-        |: (field "username" Decode.string)
-        |: (field "password" Decode.string)
+        |: field "username" Decode.string
+        |: field "password" Decode.string
 
 
 type RefreshRequest
@@ -51,14 +50,13 @@ refreshRequestEncoder (RefreshRequest model) =
 
 refreshRequestDecoder : Decoder RefreshRequest
 refreshRequestDecoder =
-    (Decode.succeed
+    Decode.succeed
         (\refreshToken ->
             RefreshRequest
                 { refreshToken = refreshToken
                 }
         )
-    )
-        |: (field "refreshToken" Decode.string)
+        |: field "refreshToken" Decode.string
 
 
 type AuthResponse
@@ -78,13 +76,12 @@ authResponseEncoder (AuthResponse model) =
 
 authResponseDecoder : Decoder AuthResponse
 authResponseDecoder =
-    (Decode.succeed
+    Decode.succeed
         (\token refreshToken ->
             AuthResponse
                 { token = token
                 , refreshToken = refreshToken
                 }
         )
-    )
-        |: (field "token" Decode.string)
-        |: (field "refreshToken" Decode.string)
+        |: field "token" Decode.string
+        |: field "refreshToken" Decode.string

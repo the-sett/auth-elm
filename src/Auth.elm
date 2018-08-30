@@ -1,38 +1,30 @@
-module Auth
-    exposing
-        ( Config
-        , Credentials
-        , Status(..)
-        , login
-        , refresh
-        , logout
-        , unauthed
-        , Model
-        , Msg
-        , init
-        , update
-        )
+module Auth exposing
+    ( Config, Credentials, Status(..)
+    , login, refresh, logout, unauthed
+    , Model, Msg, init, update
+    )
 
 {-| Manages the state of the authentication process, and provides an API
 to request authentication operations.
 
-@docs Config , Credentials , Status
-@docs login , refresh , logout , unauthed
-@docs Model , Msg , init , update
+@docs Config, Credentials, Status
+@docs login, refresh, logout, unauthed
+@docs Model, Msg, init, update
 
 -}
 
-import Date exposing (Date)
-import Time
-import Task
-import Process
-import Http
-import Result
-import Jwt exposing (Token)
 import Auth.Service
-import Model
 import AuthState exposing (AuthState, Authenticated)
+import Date exposing (Date)
+import Http
+import Jwt exposing (Token)
+import Model
+import Process
+import Result
+import Task
+import Time
 import Utils exposing (message)
+
 
 
 -- The Auth API
@@ -140,7 +132,7 @@ update msg model =
         ( innerModel, cmds, maybeStatus ) =
             getAuthState model |> innerUpdate model.authApiRoot msg
     in
-        ( setAuthState innerModel model, cmds, maybeStatus )
+    ( setAuthState innerModel model, cmds, maybeStatus )
 
 
 {-| Lifts the inner model out of the model.
@@ -151,7 +143,7 @@ getAuthState model =
         (Private inner) =
             model.innerModel
     in
-        inner
+    inner
 
 
 {-| Lowers the inner model into the model.
@@ -172,26 +164,26 @@ getStatus authState =
                 authModel =
                     AuthState.untag state
             in
-                { scopes = authModel.auth.scopes, subject = authModel.auth.subject }
+            { scopes = authModel.auth.scopes, subject = authModel.auth.subject }
     in
-        case authState of
-            AuthState.LoggedOut _ ->
-                LoggedOut
+    case authState of
+        AuthState.LoggedOut _ ->
+            LoggedOut
 
-            AuthState.Restoring _ ->
-                LoggedOut
+        AuthState.Restoring _ ->
+            LoggedOut
 
-            AuthState.Attempting _ ->
-                LoggedOut
+        AuthState.Attempting _ ->
+            LoggedOut
 
-            AuthState.Failed _ ->
-                Failed
+        AuthState.Failed _ ->
+            Failed
 
-            AuthState.LoggedIn state ->
-                LoggedIn <| extract state
+        AuthState.LoggedIn state ->
+            LoggedIn <| extract state
 
-            AuthState.Refreshing state ->
-                LoggedIn <| extract state
+        AuthState.Refreshing state ->
+            LoggedIn <| extract state
 
 
 {-| Compares two AuthStates and outputs the status of the newer one, if it differs
@@ -208,18 +200,18 @@ statusChange oldAuthState newAuthState =
             getStatus newAuthState
                 |> Debug.log "newStatus"
     in
-        case ( oldStatus, newStatus ) of
-            ( LoggedIn _, LoggedIn _ ) ->
-                Nothing
+    case ( oldStatus, newStatus ) of
+        ( LoggedIn _, LoggedIn _ ) ->
+            Nothing
 
-            ( Failed, Failed ) ->
-                Nothing
+        ( Failed, Failed ) ->
+            Nothing
 
-            ( LoggedOut, LoggedOut ) ->
-                Nothing
+        ( LoggedOut, LoggedOut ) ->
+            Nothing
 
-            ( _, _ ) ->
-                Just newStatus
+        ( _, _ ) ->
+            Just newStatus
 
 
 noop authState =
@@ -231,7 +223,7 @@ reset authState =
         newAuthState =
             AuthState.loggedOut
     in
-        ( newAuthState, Cmd.none, statusChange authState newAuthState )
+    ( newAuthState, Cmd.none, statusChange authState newAuthState )
 
 
 failed authState state =
@@ -239,7 +231,7 @@ failed authState state =
         newAuthState =
             AuthState.toFailed state
     in
-        ( newAuthState, Cmd.none, statusChange authState newAuthState )
+    ( newAuthState, Cmd.none, statusChange authState newAuthState )
 
 
 {-| Updates the auth state and triggers events needed to communicate with the
@@ -336,10 +328,10 @@ toLoggedInFromToken authApiRoot token decodedToken authState state =
         newAuthState =
             AuthState.toLoggedInWithAuthenticated authModel state
     in
-        ( newAuthState
-        , delayedRefreshCmd authApiRoot authModel
-        , statusChange authState newAuthState
-        )
+    ( newAuthState
+    , delayedRefreshCmd authApiRoot authModel
+    , statusChange authState newAuthState
+    )
 
 
 
@@ -389,10 +381,10 @@ tokenExpiryTask root refreshDate =
         delay refreshDate now =
             let
                 refreshTime =
-                    (Date.toTime refreshDate)
+                    Date.toTime refreshDate
             in
-                max ((refreshTime - now) / 2) (refreshTime - now - safeInterval)
-                    |> max 0
+            max ((refreshTime - now) / 2) (refreshTime - now - safeInterval)
+                |> max 0
     in
-        Time.now
-            |> Task.andThen (\now -> Process.sleep <| delay refreshDate now)
+    Time.now
+        |> Task.andThen (\now -> Process.sleep <| delay refreshDate now)

@@ -1,26 +1,29 @@
-module AuthState
-    exposing
-        ( AuthState(..)
-        , Authenticated
-          -- Convenience re-exports from StateMachine
-        , State
-        , Allowed
-        , untag
-          -- Constructors
-        , loggedOut
-          -- Map
-        , mapAuthenticated
-          -- State transitions
-        , toRestoring
-        , toAttempting
-        , toFailed
-        , toLoggedInWithAuthenticated
-        , toRefreshing
-        )
+module AuthState exposing
+    ( Allowed
+    , AuthState(..)
+    ,  Authenticated
+       -- Convenience re-exports from StateMachine
+
+    , State
+    ,  loggedOut
+       -- Map
+
+    ,  mapAuthenticated
+       -- State transitions
+
+    , toAttempting
+    , toFailed
+    , toLoggedInWithAuthenticated
+    , toRefreshing
+    , toRestoring
+    ,  untag
+       -- Constructors
+
+    )
 
 import Date exposing (Date)
 import Jwt exposing (Token)
-import StateMachine exposing (State(..), Allowed, map)
+import StateMachine exposing (Allowed, State(..), map)
 
 
 untag : State tag value -> value
