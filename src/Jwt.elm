@@ -43,9 +43,9 @@ decodeWithErrors token =
 
 isExpired : Posix -> String -> Bool
 isExpired now token =
-    case extractAndDecodeToken (field "exp" Decode.float) token of
+    case extractAndDecodeToken (field "exp" Decode.int) token of
         Result.Ok exp ->
-            now > (exp * 1000)
+            Time.posixToMillis now > (exp * 1000)
 
         Result.Err _ ->
             True
@@ -69,13 +69,13 @@ tokenDecoder =
         |> andMap (Decode.maybe (Decode.field "aud" Decode.string))
         |> andMap
             (Decode.map
-                (Date.fromTime << toFloat << (*) 1000)
+                (Time.millisToPosix << (*) 1000)
                 (Decode.field "exp" Decode.int)
             )
         |> andMap
             (Decode.maybe
                 (Decode.map
-                    (Date.fromTime << toFloat << (*) 1000)
+                    (Time.millisToPosix << (*) 1000)
                     (Decode.field "iat" Decode.int)
                 )
             )
@@ -104,7 +104,7 @@ extractAndDecodeToken dec s =
                             Result.Ok x
 
                         Result.Err e ->
-                            Result.Err (TokenDecodeError e)
+                            Result.Err (TokenDecodeError <| Decode.errorToString e)
 
                 Result.Err e ->
                     Result.Err (TokenProcessingError e)

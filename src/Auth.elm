@@ -21,8 +21,17 @@ import Model
 import Process
 import Result
 import Task
-import Time
+import Time exposing (Posix)
 import Utils exposing (message)
+
+
+
+-- Time constants
+
+
+second : Int
+second =
+    1000
 
 
 
@@ -328,7 +337,7 @@ toLoggedInFromToken authApiRoot token decodedToken authState state =
             AuthState.toLoggedInWithAuthenticated authModel state
     in
     ( newAuthState
-    , delayedRefreshCmd authApiRoot authModel
+    , delayedRefreshCmd authModel
     , statusChange authState newAuthState
     )
 
@@ -360,9 +369,9 @@ authRequestFromCredentials credentials =
 -- Functions for building and executing the refresh cycle task.
 
 
-delayedRefreshCmd : String -> Authenticated -> Cmd Msg
-delayedRefreshCmd authApiRoot model =
-    tokenExpiryTask authApiRoot model.refreshFrom
+delayedRefreshCmd : Authenticated -> Cmd Msg
+delayedRefreshCmd model =
+    tokenExpiryTask model.refreshFrom
         |> Task.attempt (\_ -> Refresh)
 
 
@@ -371,19 +380,22 @@ If the token expiry is less than 1 minute away, the delay is set to half of the 
 time, which should be under 30 seconds.
 The delay will expire immediately if the token expiry is already in the past.
 -}
-tokenExpiryTask : String -> Date -> Task.Task Never ()
-tokenExpiryTask root refreshDate =
+tokenExpiryTask : Posix -> Task.Task Never ()
+tokenExpiryTask timeout =
     let
         safeInterval =
-            30 * Time.second
+            30 * second
 
-        delay refreshDate now =
+        delay posixBy posixNow =
             let
-                refreshTime =
-                    Date.toTime refreshDate
+                by =
+                    Time.posixToMillis posixBy
+
+                now =
+                    Time.posixToMillis posixNow
             in
-            max ((refreshTime - now) / 2) (refreshTime - now - safeInterval)
+            max ((by - now) // 2) (by - now - safeInterval)
                 |> max 0
     in
     Time.now
-        |> Task.andThen (\now -> Process.sleep <| delay refreshDate now)
+        |> Task.andThen (\now -> Process.sleep <| toFloat (delay timeout now))

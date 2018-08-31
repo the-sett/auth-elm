@@ -23,6 +23,7 @@ module AuthState exposing
 
 import Jwt exposing (Token)
 import StateMachine exposing (Allowed, State(..), map)
+import Time exposing (Posix)
 
 
 untag : State tag value -> value
@@ -43,8 +44,8 @@ type alias Authenticated =
     , scopes : List String
     , token : String
     , decodedToken : Token
-    , expiresAt : Date
-    , refreshFrom : Date
+    , expiresAt : Posix
+    , refreshFrom : Posix
     }
 
 
@@ -98,7 +99,7 @@ refreshing model =
 -- Map functions
 
 
-mapAuth : (a -> b) -> ({ m | auth : a } -> { m | auth : b })
+mapAuth : (a -> a) -> ({ m | auth : a } -> { m | auth : a })
 mapAuth func =
     \model -> { model | auth = func model.auth }
 
