@@ -6,19 +6,13 @@ module Top exposing (init, update, view, Model, Msg)
 
 -}
 
-import Html exposing (Html, div, img, h4, text, span)
-import Html.Attributes exposing (class, src)
-import Config exposing (config)
 import Auth
+import Config exposing (config)
+import Html exposing (Html, div, h4, img, span, text)
+import Html.Attributes exposing (class, src)
+import Update3
 import UpdateUtils exposing (lift)
 import ViewUtils
-import Material
-import Material.Button as Button
-import Material.Icon as Icon
-import Material.Textfield as Textfield
-import Material.Options as Options
-import Material.List as Lists
-import Update3
 
 
 {-| The content editor program model.
@@ -144,14 +138,14 @@ view model =
                 ]
                 []
     in
-        div []
-            [ styleLink "roboto.css"
-            , styleLink "material-icons.css"
-            , styleLink "material.green-indigo.min.css"
-            , styleLink "main.css"
-            , styleLink "auth-service.css"
-            , innerHtml
-            ]
+    div []
+        [ styleLink "roboto.css"
+        , styleLink "material-icons.css"
+        , styleLink "material.green-indigo.min.css"
+        , styleLink "main.css"
+        , styleLink "auth-service.css"
+        , innerHtml
+        ]
 
 
 initialView :

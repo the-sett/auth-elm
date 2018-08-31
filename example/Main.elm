@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (main)
 
 import Html
 import Top exposing (Model, Msg, init, update, view)

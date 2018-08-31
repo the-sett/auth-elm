@@ -20,4 +20,4 @@ lift get set tagger update action model =
         ( updatedSubModel, msg ) =
             update action (get model)
     in
-        ( set updatedSubModel model, Cmd.map tagger msg )
+    ( set updatedSubModel model, Cmd.map tagger msg )
