@@ -17,7 +17,7 @@ const isProd = TARGET_ENV === prod;
 
 
 // entry and output path/filename variables
-const entryPath = path.join(__dirname, 'src/js/index.js');
+const entryPath = path.join(__dirname, 'assets/index.js');
 const outputPath = path.join(__dirname, 'dist');
 const outputFilename = isProd ? '[name]-[hash].js' : '[name].js';
 
@@ -26,16 +26,11 @@ console.log(`Building for ${TARGET_ENV}`);
 const commonConfig = {
   output: {
     path: outputPath,
-    filename: `static/js/${outputFilename}`,
+    filename: `assets/${outputFilename}`,
   },
 
   resolve: {
     extensions: ['.js', '.elm'],
-
-    alias: {
-      jquery: 'jquery/dist/jquery.min.js',
-      'text-to-svg': 'text-to-svg/build/src/index.js'
-    }
   },
 
   module: {
@@ -44,27 +39,14 @@ const commonConfig = {
         test: /\.(eot|ttf|woff|woff2|svg)$/,
         use: 'file-loader?publicPath=../../&name=static/css/[hash].[ext]',
       },
-      {
-        test: /\.(json)$/,
-        loader: 'file-loader',
-        options: {
-          name: '[path][name].[ext]',
-        }
-      },
     ]
   },
 
   plugins: [
     new HtmlWebpackPlugin({
-      template: 'src/static/index.html',
+      template: 'assets/index.html',
       inject: 'body',
       filename: 'index.html',
-    }),
-    new webpack.ProvidePlugin({ //Delete this plugin if you don't need jQuery/Bootstrap
-      $: 'jquery',
-      jQuery: 'jquery',
-      'window.jQuery': 'jquery',
-      Popper: 'popper',
     }),
   ]
 };
