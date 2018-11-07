@@ -55,8 +55,8 @@ Requests that an Auth refresh be performed to check what the current
 authentication state is, as the application may be able to re-authenticate
 from a refresh token held as a cookie, without needing the user to log in.
 -}
-init : ( Model, Cmd Msg )
-init =
+init : flags -> ( Model, Cmd Msg )
+init _ =
     ( { auth =
             Auth.init
                 { authApiRoot = config.authRoot
@@ -114,7 +114,7 @@ view model =
         innerHtml =
             case model.session of
                 Initial ->
-                    initialView model
+                    initialView
 
                 LoggedOut ->
                     loginView model
@@ -184,41 +184,41 @@ loginView model =
                             [ text "Log In" ]
                         ]
                     , div [ class "mdl-card__supporting-text" ]
-                        [ Textfield.render Mdl
-                            [ 1, 1 ]
-                            model.mdl
-                            [ Textfield.label "Username"
-                            , Textfield.floatingLabel
-                            , Textfield.text_
-                            , Textfield.value model.username
-                            , Options.onInput UpdateUsername
-                            ]
-                            []
-                        , Textfield.render Mdl
-                            [ 1, 2 ]
-                            model.mdl
-                            [ Textfield.label "Password"
-                            , Textfield.floatingLabel
-                            , Textfield.text_
-                            , Textfield.password
-                            , Textfield.value model.password
-                            , Options.onInput UpdatePassword
-                            ]
-                            []
+                        [-- Textfield.render Mdl
+                         --     [ 1, 1 ]
+                         --     model.mdl
+                         --     [ Textfield.label "Username"
+                         --     , Textfield.floatingLabel
+                         --     , Textfield.text_
+                         --     , Textfield.value model.username
+                         --     , Options.onInput UpdateUsername
+                         --     ]
+                         --     []
+                         -- , Textfield.render Mdl
+                         --     [ 1, 2 ]
+                         --     model.mdl
+                         --     [ Textfield.label "Password"
+                         --     , Textfield.floatingLabel
+                         --     , Textfield.text_
+                         --     , Textfield.password
+                         --     , Textfield.value model.password
+                         --     , Options.onInput UpdatePassword
+                         -- ]
+                         -- []
                         ]
                     , div [ class "mdl-card__actions" ]
                         [ div [ class "control-bar" ]
                             [ div [ class "control-bar__row" ]
                                 [ div [ class "control-bar__left-0" ]
-                                    [ Button.render Mdl
-                                        [ 1, 2 ]
-                                        model.mdl
-                                        [ Button.colored
-                                        , Options.onClick LogIn
-                                        ]
-                                        [ text "Log In"
-                                        , Icon.i "chevron_right"
-                                        ]
+                                    [-- Button.render Mdl
+                                     --     [ 1, 2 ]
+                                     --     model.mdl
+                                     --     [ Button.colored
+                                     --     , Options.onClick LogIn
+                                     --     ]
+                                     --     [ text "Log In"
+                                     --     , Icon.i "chevron_right"
+                                     --     ]
                                     ]
                                 ]
                             ]
@@ -250,41 +250,41 @@ notPermittedView model =
                             [ text "Not Authorized" ]
                         ]
                     , div [ class "mdl-card__supporting-text" ]
-                        [ Textfield.render Mdl
-                            [ 1, 1 ]
-                            model.mdl
-                            [ Textfield.label "Username"
-                            , Textfield.floatingLabel
-                            , Textfield.text_
-                            , Textfield.disabled
-                            , Textfield.value model.username
-                            ]
-                            []
-                        , Textfield.render Mdl
-                            [ 1, 2 ]
-                            model.mdl
-                            [ Textfield.label "Password"
-                            , Textfield.floatingLabel
-                            , Textfield.text_
-                            , Textfield.password
-                            , Textfield.disabled
-                            , Textfield.value model.password
-                            ]
-                            []
+                        [--  Textfield.render Mdl
+                         --     [ 1, 1 ]
+                         --     model.mdl
+                         --     [ Textfield.label "Username"
+                         --     , Textfield.floatingLabel
+                         --     , Textfield.text_
+                         --     , Textfield.disabled
+                         --     , Textfield.value model.username
+                         --     ]
+                         --     []
+                         -- , Textfield.render Mdl
+                         --     [ 1, 2 ]
+                         --     model.mdl
+                         --     [ Textfield.label "Password"
+                         --     , Textfield.floatingLabel
+                         --     , Textfield.text_
+                         --     , Textfield.password
+                         --     , Textfield.disabled
+                         --     , Textfield.value model.password
+                         --     ]
+                         --     []
                         ]
                     , div [ class "mdl-card__actions" ]
                         [ div [ class "control-bar" ]
                             [ div [ class "control-bar__row" ]
                                 [ div [ class "control-bar__left-0" ]
-                                    [ Button.render Mdl
-                                        [ 2, 1 ]
-                                        model.mdl
-                                        [ Button.colored
-                                        , Options.onClick TryAgain
-                                        ]
-                                        [ Icon.i "chevron_left"
-                                        , text "Try Again"
-                                        ]
+                                    [-- Button.render Mdl
+                                     --     [ 2, 1 ]
+                                     --     model.mdl
+                                     --     [ Button.colored
+                                     --     , Options.onClick TryAgain
+                                     --     ]
+                                     --     [ Icon.i "chevron_left"
+                                     --     , text "Try Again"
+                                     --     ]
                                     ]
                                 ]
                             ]
@@ -314,41 +314,41 @@ authenticatedView model user =
                             [ text "Authenticated" ]
                         ]
                     , div [ class "mdl-card__supporting-text" ]
-                        [ Lists.ul []
-                            [ Lists.li [ Lists.withBody ]
-                                -- NB! Required on every Lists.li containing body.
-                                [ Lists.content []
-                                    [ text "Logged In As"
-                                    , Lists.body [] [ text model.username ]
-                                    ]
-                                ]
-                            , Lists.li [ Lists.withBody ]
-                                [ Lists.content []
-                                    [ text "With Id"
-                                    , Lists.body [] [ text user.subject ]
-                                    ]
-                                ]
-                            , Lists.li [ Lists.withBody ]
-                                [ Lists.content []
-                                    [ text "With Permissions"
-                                    , Lists.body [] <| permissionsToChips user.scopes
-                                    ]
-                                ]
-                            ]
+                        [--  Lists.ul []
+                         --     [ Lists.li [ Lists.withBody ]
+                         --         -- NB! Required on every Lists.li containing body.
+                         --         [ Lists.content []
+                         --             [ text "Logged In As"
+                         --             , Lists.body [] [ text model.username ]
+                         --             ]
+                         --         ]
+                         --     , Lists.li [ Lists.withBody ]
+                         --         [ Lists.content []
+                         --             [ text "With Id"
+                         --             , Lists.body [] [ text user.subject ]
+                         --             ]
+                         --         ]
+                         --     , Lists.li [ Lists.withBody ]
+                         --         [ Lists.content []
+                         --             [ text "With Permissions"
+                         --             , Lists.body [] <| permissionsToChips user.scopes
+                         --             ]
+                         --         ]
+                         --     ]
                         ]
                     , div [ class "mdl-card__actions" ]
                         [ div [ class "control-bar" ]
                             [ div [ class "control-bar__row" ]
                                 [ div [ class "control-bar__left-0" ]
-                                    [ Button.render Mdl
-                                        [ 2, 1 ]
-                                        model.mdl
-                                        [ Button.colored
-                                        , Options.onClick TryAgain
-                                        ]
-                                        [ Icon.i "chevron_left"
-                                        , text "Log Out"
-                                        ]
+                                    [-- Button.render Mdl
+                                     --     [ 2, 1 ]
+                                     --     model.mdl
+                                     --     [ Button.colored
+                                     --     , Options.onClick TryAgain
+                                     --     ]
+                                     --     [ Icon.i "chevron_left"
+                                     --     , text "Log Out"
+                                     --     ]
                                     ]
                                 ]
                             ]

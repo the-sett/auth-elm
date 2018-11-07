@@ -1,12 +1,12 @@
 module Main exposing (main)
 
-import Html
+import Browser
 import Top exposing (Model, Msg, init, update, view)
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
+    Browser.element
         { init = init
         , update = update
         , subscriptions = \_ -> Sub.none
