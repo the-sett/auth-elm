@@ -20,7 +20,6 @@ import ViewUtils
 type alias Model =
     { auth : Auth.Model
     , session : Session
-    , mdl : Material.Model
     , username : String
     , password : String
     }
@@ -40,7 +39,6 @@ type Session
 -}
 type Msg
     = AuthMsg Auth.Msg
-    | Mdl (Material.Msg Msg)
     | LogIn
     | TryAgain
     | UpdateUsername String
@@ -64,7 +62,6 @@ init =
                 { authApiRoot = config.authRoot
                 }
       , session = Initial
-      , mdl = Material.model
       , username = ""
       , password = ""
       }
@@ -75,18 +72,15 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
     case action of
-        Mdl action_ ->
-            Material.update Mdl action_ model
-
         AuthMsg msg ->
             Update3.lift .auth (\x m -> { m | auth = x }) AuthMsg Auth.update msg model
-                |> Update3.evalMaybe (\status -> \model -> ( { model | session = authStatusToSession status }, Cmd.none )) Cmd.none
+                |> Update3.evalMaybe (\status -> \nextModel -> ( { nextModel | session = authStatusToSession status }, Cmd.none )) Cmd.none
 
         LogIn ->
             ( model, Auth.login { username = model.username, password = model.password } |> Cmd.map AuthMsg )
 
         TryAgain ->
-            ( { model | username = "", password = "", mdl = Material.model }, Auth.unauthed |> Cmd.map AuthMsg )
+            ( { model | username = "", password = "" }, Auth.unauthed |> Cmd.map AuthMsg )
 
         UpdateUsername str ->
             ( { model | username = str }, Cmd.none )
@@ -148,10 +142,8 @@ view model =
         ]
 
 
-initialView :
-    { a | mdl : Material.Model }
-    -> Html Msg
-initialView model =
+initialView : Html Msg
+initialView =
     div []
         [ div [ class "layout-fixed-width--one-card" ]
             [ ViewUtils.rhythm1SpacerDiv
@@ -173,8 +165,7 @@ initialView model =
 
 loginView :
     { a
-        | mdl : Material.Model
-        , username : String
+        | username : String
         , password : String
     }
     -> Html Msg
@@ -240,8 +231,7 @@ loginView model =
 
 notPermittedView :
     { a
-        | mdl : Material.Model
-        , username : String
+        | username : String
         , password : String
     }
     -> Html Msg
@@ -306,7 +296,7 @@ notPermittedView model =
 
 
 authenticatedView :
-    { a | mdl : Material.Model, username : String }
+    { a | username : String }
     -> { scopes : List String, subject : String }
     -> Html Msg
 authenticatedView model user =
