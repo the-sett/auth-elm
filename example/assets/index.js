@@ -1,7 +1,10 @@
+require('../assets/styles/roboto.css')
+require('../assets/images/data_center-large.png')
+
 const {
   Elm
-} = require('../src/elm/Main.elm');
+} = require('../src/elm/Top.elm');
 
-const app = Elm.Main.init({
-  node: document.getElementById('diagram')
+const app = Elm.Top.init({
+  node: document.getElementById('application')
 });
