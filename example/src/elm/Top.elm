@@ -10,6 +10,7 @@ import Auth
 import Config exposing (config)
 import Html exposing (Html, div, h4, img, span, text)
 import Html.Attributes exposing (class, src)
+import TheSettLaf exposing (devices, fonts, responsiveMeta)
 import Update3
 import UpdateUtils exposing (lift)
 import ViewUtils
