@@ -68,7 +68,7 @@ init _ =
       , session = Initial
       , username = ""
       , password = ""
-      , debugStyle = False
+      , debugStyle = True
       }
     , Auth.refresh |> Cmd.map AuthMsg
     )
@@ -151,43 +151,41 @@ styledView model =
             div [] innerView
 
 
+card image title =
+    div
+        []
+        [ div []
+            [ div []
+                [ img [ src image ]
+                    []
+                ]
+            , div []
+                [ h4 []
+                    [ text title ]
+                ]
+            ]
+        ]
+
+
 initialView : Html.Styled.Html Msg
 initialView =
-    -- div []
-    --     [ div [ class "layout-fixed-width--one-card" ]
-    --         [ ViewUtils.rhythm1SpacerDiv
-    --         , div [ class "mdl-grid" ]
-    --             [ div [ class "mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp" ]
-    --                 [ div [ class "mdl-card__media" ]
-    --                     [ img [ src "images/data_center-large.png" ]
-    --                         []
-    --                     ]
-    --                 , div [ class "mdl-card__title" ]
-    --                     [ h4 [ class "mdl-card__title-text" ]
-    --                         [ text "Attempting to Restore" ]
-    --                     ]
-    --                 ]
-    --             ]
-    --         ]
-    --     ]
     styled div
         [ wrapper devices ]
         []
-        [ div []
-            [ ViewUtils.rhythm1SpacerDiv
-            , div []
-                [ div []
-                    [ div []
-                        [ img [ src "images/data_center-large.png" ]
-                            []
-                        ]
-                    , div []
-                        [ h4 []
-                            [ text "Attempting to Restore" ]
-                        ]
-                    ]
+        [ ViewUtils.rhythm1SpacerDiv
+        , Grid.grid
+            []
+            []
+            [ Grid.row
+                [ Grid.sm [ Grid.around ] ]
+                []
+                [ Grid.col
+                    []
+                    []
+                    [ card "images/data_center-large.png" "Attempting to Restore" ]
                 ]
             ]
+            devices
         ]
 
 
