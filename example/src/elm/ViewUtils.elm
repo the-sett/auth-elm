@@ -1,7 +1,7 @@
 module ViewUtils exposing (rhythm1SpacerDiv)
 
-import Html exposing (Html, div)
-import Html.Attributes exposing (class)
+import Html.Styled exposing (Html, div)
+import Html.Styled.Attributes exposing (class)
 
 
 rhythm1SpacerDiv : Html msg
