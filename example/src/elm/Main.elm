@@ -10,9 +10,9 @@ import Auth
 import Config exposing (config)
 import DebugStyle
 import Grid
-import Html.Styled exposing (div, h4, img, input, span, text, toUnstyled)
+import Html.Styled exposing (div, h4, img, input, span, styled, text, toUnstyled)
 import Html.Styled.Attributes exposing (src)
-import TheSettLaf exposing (devices, fonts, responsiveMeta)
+import TheSettLaf exposing (devices, fonts, responsiveMeta, wrapper)
 import Update3
 import UpdateUtils exposing (lift)
 import ViewUtils
@@ -170,7 +170,9 @@ initialView =
     --             ]
     --         ]
     --     ]
-    div []
+    styled div
+        [ wrapper devices ]
+        []
         [ div []
             [ ViewUtils.rhythm1SpacerDiv
             , div []
