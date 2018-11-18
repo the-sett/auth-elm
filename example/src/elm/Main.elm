@@ -7,11 +7,13 @@ module Main exposing (init, update, view, Model, Msg)
 -}
 
 import Auth
+import Cards
 import Config exposing (config)
 import DebugStyle
 import Grid
 import Html.Styled exposing (div, h4, img, input, span, styled, text, toUnstyled)
 import Html.Styled.Attributes exposing (src)
+import ResponsiveDSL exposing (lg, md, sm, xl)
 import TheSettLaf exposing (devices, fonts, responsiveMeta, wrapper)
 import Update3
 import UpdateUtils exposing (lift)
@@ -151,20 +153,22 @@ styledView model =
             div [] innerView
 
 
-card image title =
-    div
+card imageUrl title devices =
+    Cards.card []
         []
-        [ div []
-            [ div []
-                [ img [ src image ]
-                    []
-                ]
-            , div []
-                [ h4 []
-                    [ text title ]
-                ]
+        [ Cards.image
+            [ sm [ Cards.height 4, Cards.src imageUrl ]
+            , md [ Cards.height 5 ]
+            , lg [ Cards.height 6 ]
+            , xl [ Cards.height 7 ]
             ]
+            []
+            []
+        , Cards.title title
+        , Cards.body [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " ]
+        , Cards.controls [ text "Button" ]
         ]
+        devices
 
 
 initialView : Html.Styled.Html Msg
@@ -177,12 +181,15 @@ initialView =
             []
             []
             [ Grid.row
-                [ Grid.sm [ Grid.around ] ]
+                [ sm [ Grid.around ] ]
                 []
                 [ Grid.col
+                    [ sm [ Grid.columns 8 ]
+                    , md [ Grid.columns 6 ]
+                    , lg [ Grid.columns 4 ]
+                    ]
                     []
-                    []
-                    [ card "images/data_center-large.png" "Attempting to Restore" ]
+                    [ card "images/data_center-large.png" "Attempting to Restore" devices ]
                 ]
             ]
             devices
