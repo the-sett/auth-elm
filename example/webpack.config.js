@@ -97,7 +97,8 @@ if (isDev) {
       contentBase: './src',
       inline: true,
       stats: 'errors-only',
-      port: 9071
+      port: 9071,
+      disableHostCheck: true
     }
   });
 }
