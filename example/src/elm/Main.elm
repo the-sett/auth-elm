@@ -13,6 +13,7 @@ import Css.Global
 import Grid
 import Html.Styled exposing (div, h4, img, input, span, styled, text, toUnstyled)
 import Html.Styled.Attributes exposing (src)
+import Responsive
 import Styles exposing (lg, md, sm, xl)
 import TheSett.Cards as Cards
 import TheSett.Debug
@@ -72,7 +73,7 @@ init _ =
       , session = Initial
       , username = ""
       , password = ""
-      , debugStyle = True
+      , debugStyle = False
       }
     , Auth.refresh |> Cmd.map AuthMsg
     )
@@ -115,11 +116,29 @@ authStatusToSession status =
 -- View
 
 
+warmMidGrey =
+    Css.rgb 214 212 214
+
+
+paperWhite =
+    Css.rgb 248 248 248
+
+
 {-| Top level view function.
 -}
 view model =
     styledView model
         |> toUnstyled
+
+
+global : List Css.Global.Snippet
+global =
+    [ Css.Global.each
+        [ Css.Global.html ]
+        [ Css.height <| Css.pct 100
+        , Css.backgroundColor <| warmMidGrey
+        ]
+    ]
 
 
 styledView : Model -> Html.Styled.Html Msg
@@ -129,6 +148,7 @@ styledView model =
             [ responsiveMeta
             , fonts
             , Laf.style devices
+            , Css.Global.global global
             , case model.session of
                 Initial ->
                     initialView
@@ -160,20 +180,27 @@ card imageUrl title devices =
     Cards.card
         [ sm
             [ Styles.styles
-                [ Css.maxWidth <| Css.px 350
+                [ Css.maxWidth <| Css.vw 98
+                , Css.backgroundColor <| paperWhite
+                ]
+            ]
+        , md
+            [ Styles.styles
+                [ Css.maxWidth <| Css.px 420
+                , Css.backgroundColor <| paperWhite
                 ]
             ]
         ]
         []
         [ Cards.image
-            [ Styles.height 4
+            [ Styles.height 6
             , sm [ Cards.src imageUrl ]
             ]
             []
             []
         , Cards.title title
-        , Cards.body [ text "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " ]
-        , Cards.controls [ text "Button" ]
+        , Cards.body [ text "Attempting to restore authentication using a local refresh token." ]
+        , Cards.controls []
         ]
         devices
 
@@ -181,20 +208,18 @@ card imageUrl title devices =
 initialView : Html.Styled.Html Msg
 initialView =
     styled div
-        [ wrapper devices ]
+        [ wrapper devices
+        , Css.marginTop <| Css.vh 10
+        ]
         []
-        [ ViewUtils.rhythm1SpacerDiv
-        , Grid.grid
+        [ Grid.grid
             [ sm [ Grid.columns 12 ] ]
             []
             [ Grid.row
                 [ sm [ Grid.center ] ]
                 []
                 [ Grid.col
-                    [--  sm [ Grid.columns 8 ]
-                     -- , md [ Grid.columns 6 ]
-                     -- , lg [ Grid.columns 4 ]
-                    ]
+                    []
                     []
                     [ card "images/data_center-large.png" "Attempting to Restore" devices ]
                 ]
