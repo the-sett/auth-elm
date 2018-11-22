@@ -7,14 +7,16 @@ module Main exposing (init, update, view, Model, Msg)
 -}
 
 import Auth
-import Cards
 import Config exposing (config)
-import DebugStyle
+import Css
+import Css.Global
 import Grid
 import Html.Styled exposing (div, h4, img, input, span, styled, text, toUnstyled)
 import Html.Styled.Attributes exposing (src)
-import ResponsiveDSL exposing (lg, md, sm, xl)
-import TheSettLaf exposing (devices, fonts, responsiveMeta, wrapper)
+import Styles exposing (lg, md, sm, xl)
+import TheSett.Cards as Cards
+import TheSett.Debug
+import TheSett.Laf as Laf exposing (devices, fonts, responsiveMeta, wrapper)
 import Update3
 import UpdateUtils exposing (lift)
 import ViewUtils
@@ -126,7 +128,7 @@ styledView model =
         innerView =
             [ responsiveMeta
             , fonts
-            , TheSettLaf.style devices
+            , Laf.style devices
             , case model.session of
                 Initial ->
                     initialView
@@ -143,7 +145,8 @@ styledView model =
             ]
 
         debugStyle =
-            DebugStyle.style devices
+            Css.Global.global <|
+                TheSett.Debug.global Laf.devices
     in
     case model.debugStyle of
         True ->
@@ -154,13 +157,17 @@ styledView model =
 
 
 card imageUrl title devices =
-    Cards.card []
+    Cards.card
+        [ sm
+            [ Styles.styles
+                [ Css.maxWidth <| Css.px 350
+                ]
+            ]
+        ]
         []
         [ Cards.image
-            [ sm [ Cards.height 4, Cards.src imageUrl ]
-            , md [ Cards.height 5 ]
-            , lg [ Cards.height 6 ]
-            , xl [ Cards.height 7 ]
+            [ Styles.height 4
+            , sm [ Cards.src imageUrl ]
             ]
             []
             []
@@ -178,15 +185,15 @@ initialView =
         []
         [ ViewUtils.rhythm1SpacerDiv
         , Grid.grid
-            []
+            [ sm [ Grid.columns 12 ] ]
             []
             [ Grid.row
-                [ sm [ Grid.around ] ]
+                [ sm [ Grid.center ] ]
                 []
                 [ Grid.col
-                    [ sm [ Grid.columns 8 ]
-                    , md [ Grid.columns 6 ]
-                    , lg [ Grid.columns 4 ]
+                    [--  sm [ Grid.columns 8 ]
+                     -- , md [ Grid.columns 6 ]
+                     -- , lg [ Grid.columns 4 ]
                     ]
                     []
                     [ card "images/data_center-large.png" "Attempting to Restore" devices ]
