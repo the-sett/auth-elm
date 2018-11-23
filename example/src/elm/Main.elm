@@ -15,6 +15,7 @@ import Html.Styled exposing (div, h4, img, input, span, styled, text, toUnstyled
 import Html.Styled.Attributes exposing (src)
 import Responsive
 import Styles exposing (lg, md, sm, xl)
+import TheSett.Buttons as Buttons
 import TheSett.Cards as Cards
 import TheSett.Debug
 import TheSett.Laf as Laf exposing (devices, fonts, responsiveMeta, wrapper)
@@ -154,8 +155,7 @@ styledView model =
                     initialView
 
                 LoggedOut ->
-                    --loginView model
-                    initialView
+                    loginView model
 
                 FailedAuth ->
                     notPermittedView model
@@ -176,17 +176,19 @@ styledView model =
             div [] innerView
 
 
-card imageUrl title devices =
+card imageUrl title body controls devices =
     Cards.card
         [ sm
             [ Styles.styles
                 [ Css.maxWidth <| Css.vw 98
+                , Css.minWidth <| Css.px 320
                 , Css.backgroundColor <| paperWhite
                 ]
             ]
         , md
             [ Styles.styles
                 [ Css.maxWidth <| Css.px 420
+                , Css.minWidth <| Css.px 400
                 , Css.backgroundColor <| paperWhite
                 ]
             ]
@@ -199,8 +201,8 @@ card imageUrl title devices =
             []
             []
         , Cards.title title
-        , Cards.body [ text "Attempting to restore authentication using a local refresh token." ]
-        , Cards.controls []
+        , Cards.body body
+        , Cards.controls controls
         ]
         devices
 
@@ -208,8 +210,7 @@ card imageUrl title devices =
 initialView : Html.Styled.Html Msg
 initialView =
     styled div
-        [ wrapper devices
-        , Css.marginTop <| Css.vh 10
+        [ Css.marginTop <| Css.vh 10
         ]
         []
         [ Grid.grid
@@ -221,7 +222,12 @@ initialView =
                 [ Grid.col
                     []
                     []
-                    [ card "images/data_center-large.png" "Attempting to Restore" devices ]
+                    [ card "images/data_center-large.png"
+                        "Attempting to Restore"
+                        [ text "Attempting to restore authentication using a local refresh token." ]
+                        []
+                        devices
+                    ]
                 ]
             ]
             devices
@@ -235,118 +241,31 @@ loginView :
     }
     -> Html.Styled.Html Msg
 loginView model =
-    -- div []
-    --     [ div [ class "layout-fixed-width--one-card" ]
-    --         [ ViewUtils.rhythm1SpacerDiv
-    --         , div [ class "mdl-grid" ]
-    --             [ div [ class "mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp" ]
-    --                 [ div [ class "mdl-card__media" ]
-    --                     [ img [ src "images/data_center-large.png" ]
-    --                         []
-    --                     ]
-    --                 , div [ class "mdl-card__title" ]
-    --                     [ h4 [ class "mdl-card__title-text" ]
-    --                         [ text "Log In" ]
-    --                     ]
-    --                 , div [ class "mdl-card__supporting-text" ]
-    --                     [ Textfield.render Mdl
-    --                         [ 1, 1 ]
-    --                         model.mdl
-    --                         [ Textfield.label "Username"
-    --                         , Textfield.floatingLabel
-    --                         , Textfield.text_
-    --                         , Textfield.value model.username
-    --                         , Options.onInput UpdateUsername
-    --                         ]
-    --                         []
-    --                     , Textfield.render Mdl
-    --                         [ 1, 2 ]
-    --                         model.mdl
-    --                         [ Textfield.label "Password"
-    --                         , Textfield.floatingLabel
-    --                         , Textfield.text_
-    --                         , Textfield.password
-    --                         , Textfield.value model.password
-    --                         , Options.onInput UpdatePassword
-    --                         ]
-    --                         []
-    --                     ]
-    --                 , div [ class "mdl-card__actions" ]
-    --                     [ div [ class "control-bar" ]
-    --                         [ div [ class "control-bar__row" ]
-    --                             [ div [ class "control-bar__left-0" ]
-    --                                 [ Button.render Mdl
-    --                                     [ 1, 2 ]
-    --                                     model.mdl
-    --                                     [ Button.colored
-    --                                     , Options.onClick LogIn
-    --                                     ]
-    --                                     [ text "Log In"
-    --                                     , Icon.i "chevron_right"
-    --                                     ]
-    --                                 ]
-    --                             ]
-    --                         ]
-    --                     ]
-    --                 ]
-    --             ]
-    --         ]
-    --     ]
-    div []
-        [ div []
-            [ ViewUtils.rhythm1SpacerDiv
-            , div []
-                [ div []
-                    [ div []
-                        [ img [ src "images/data_center-large.png" ]
-                            []
-                        ]
-                    , div []
-                        [ h4 []
-                            [ text "Log In" ]
-                        ]
-                    , div []
+    styled div
+        [ Css.marginTop <| Css.vh 10
+        ]
+        []
+        [ Grid.grid
+            [ sm [ Grid.columns 12 ] ]
+            []
+            [ Grid.row
+                [ sm [ Grid.center ] ]
+                []
+                [ Grid.col
+                    []
+                    []
+                    [ card "images/data_center-large.png"
+                        "Log In"
                         [ text "Username"
                         , text "Password"
-
-                        -- Textfield.render
-                        --     [ Textfield.label "Username"
-                        --     , Textfield.floatingLabel
-                        --     , Textfield.text_
-                        --     , Textfield.value model.username
-                        --     , Options.onInput UpdateUsername
-                        --     ]
-                        --     []
-                        -- , Textfield.render
-                        --     [ Textfield.label "Password"
-                        --     , Textfield.floatingLabel
-                        --     , Textfield.text_
-                        --     , Textfield.password
-                        --     , Textfield.value model.password
-                        --     , Options.onInput UpdatePassword
-                        --     ]
-                        --     []
                         ]
-                    , div []
-                        [ div []
-                            [ div []
-                                [ div []
-                                    [ text "Log In"
-
-                                    -- Button.render
-                                    --     [ Button.colored
-                                    --     , Options.onClick LogIn
-                                    --     ]
-                                    --     [ text "Log In"
-                                    --     , Icon.i "chevron_right"
-                                    --     ]
-                                    ]
-                                ]
-                            ]
+                        [ Buttons.button [] [] [ text "Log In" ] devices
                         ]
+                        devices
                     ]
                 ]
             ]
+            devices
         ]
 
 
@@ -357,64 +276,31 @@ notPermittedView :
     }
     -> Html.Styled.Html Msg
 notPermittedView model =
-    -- div []
-    --     [ div [ class "layout-fixed-width--one-card" ]
-    --         [ ViewUtils.rhythm1SpacerDiv
-    --         , div [ class "mdl-grid" ]
-    --             [ div [ class "mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp" ]
-    --                 [ div [ class "mdl-card__media" ]
-    --                     [ img [ src "images/data_center-large.png" ]
-    --                         []
-    --                     ]
-    --                 , div [ class "mdl-card__title" ]
-    --                     [ h4 [ class "mdl-card__title-text" ]
-    --                         [ text "Not Authorized" ]
-    --                     ]
-    --                 , div [ class "mdl-card__supporting-text" ]
-    --                     [ Textfield.render Mdl
-    --                         [ 1, 1 ]
-    --                         model.mdl
-    --                         [ Textfield.label "Username"
-    --                         , Textfield.floatingLabel
-    --                         , Textfield.text_
-    --                         , Textfield.disabled
-    --                         , Textfield.value model.username
-    --                         ]
-    --                         []
-    --                     , Textfield.render Mdl
-    --                         [ 1, 2 ]
-    --                         model.mdl
-    --                         [ Textfield.label "Password"
-    --                         , Textfield.floatingLabel
-    --                         , Textfield.text_
-    --                         , Textfield.password
-    --                         , Textfield.disabled
-    --                         , Textfield.value model.password
-    --                         ]
-    --                         []
-    --                     ]
-    --                 , div [ class "mdl-card__actions" ]
-    --                     [ div [ class "control-bar" ]
-    --                         [ div [ class "control-bar__row" ]
-    --                             [ div [ class "control-bar__left-0" ]
-    --                                 [ Button.render Mdl
-    --                                     [ 2, 1 ]
-    --                                     model.mdl
-    --                                     [ Button.colored
-    --                                     , Options.onClick TryAgain
-    --                                     ]
-    --                                     [ Icon.i "chevron_left"
-    --                                     , text "Try Again"
-    --                                     ]
-    --                                 ]
-    --                             ]
-    --                         ]
-    --                     ]
-    --                 ]
-    --             ]
-    --         ]
-    --     ]
-    div [] []
+    styled div
+        [ Css.marginTop <| Css.vh 10
+        ]
+        []
+        [ Grid.grid
+            [ sm [ Grid.columns 12 ] ]
+            []
+            [ Grid.row
+                [ sm [ Grid.center ] ]
+                []
+                [ Grid.col
+                    []
+                    []
+                    [ card "images/data_center-large.png"
+                        "Not Authorized"
+                        [ text "Username"
+                        , text "Password"
+                        ]
+                        [ Buttons.button [] [] [ text "Try Again" ] devices ]
+                        devices
+                    ]
+                ]
+            ]
+            devices
+        ]
 
 
 authenticatedView :
