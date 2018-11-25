@@ -12,7 +12,7 @@ import Css
 import Css.Global
 import Grid
 import Html.Styled exposing (div, h4, img, input, span, styled, text, toUnstyled)
-import Html.Styled.Attributes exposing (src)
+import Html.Styled.Attributes exposing (for, id, name, src)
 import Responsive
 import Styles exposing (lg, md, sm, xl)
 import TheSett.Buttons as Buttons
@@ -256,8 +256,25 @@ loginView model =
                     []
                     [ card "images/data_center-large.png"
                         "Log In"
-                        [ text "Username"
-                        , text "Password"
+                        [ styled div
+                            []
+                            []
+                            [ styled Html.Styled.input
+                                [ Css.border <| Css.px 0
+                                , Css.borderBottom3 (Css.px 1) Css.solid (Css.rgba 0 0 0 0.125)
+                                , Css.outline Css.none
+                                ]
+                                [ id "username", name "username" ]
+                                []
+                            , styled Html.Styled.label
+                                []
+                                [ for "username" ]
+                                [ text "Username" ]
+                            ]
+                        , Html.Styled.br [] []
+                        , Html.Styled.br [] []
+                        , Html.Styled.input [ id "password" ] []
+                        , Html.Styled.label [ for "password" ] [ text "Password" ]
                         ]
                         [ Buttons.button [] [] [ text "Log In" ] devices
                         ]
