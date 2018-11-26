@@ -131,7 +131,19 @@ global =
     [ Css.Global.each
         [ Css.Global.html ]
         [ Css.height <| Css.pct 100
-        , Css.backgroundColor <| warmMidGrey
+
+        --, Css.backgroundColor <| warmMidGrey
+        , Responsive.deviceStyle devices
+            (\common device ->
+                let
+                    headerPx =
+                        Responsive.rhythm 9.5 common device
+                in
+                Css.property "background" <|
+                    "linear-gradient(rgb(120, 116, 120) 0%, "
+                        ++ String.fromFloat headerPx
+                        ++ "px, rgb(225, 212, 214) 0px, rgb(208, 212, 214) 100%)"
+            )
         ]
     , Css.Global.typeSelector "input:focus"
         [ Css.Global.generalSiblings
@@ -205,8 +217,8 @@ card imageUrl title cardBody controls devices =
     Cards.card
         [ sm
             [ Styles.styles
-                [ Css.maxWidth <| Css.vw 98
-                , Css.minWidth <| Css.px 320
+                [ Css.maxWidth <| Css.vw 100
+                , Css.minWidth <| Css.px 310
                 , Css.backgroundColor <| paperWhite
                 ]
             ]
@@ -267,7 +279,8 @@ loginView :
     -> Html.Styled.Html Msg
 loginView model =
     styled div
-        [ Css.marginTop <| Css.vh 10
+        [ Responsive.deviceStyle devices
+            (\common device -> Css.marginTop <| Responsive.rhythmPx 3 common device)
         ]
         []
         [ Grid.grid
