@@ -14,6 +14,7 @@ import Css.Global
 import Grid
 import Html.Styled exposing (div, form, h4, img, input, label, span, styled, text, toUnstyled)
 import Html.Styled.Attributes exposing (for, id, name, src)
+import Html.Styled.Events exposing (onClick)
 import Responsive
 import Styles exposing (lg, md, sm, xl)
 import TheSett.Buttons as Buttons
@@ -54,6 +55,7 @@ type Msg
     | TryAgain
     | UpdateUsername String
     | UpdatePassword String
+    | ToggleGrid
 
 
 
@@ -99,6 +101,9 @@ update action model =
 
         UpdatePassword str ->
             ( { model | password = str }, Cmd.none )
+
+        ToggleGrid ->
+            ( { model | debugStyle = not model.debugStyle }, Cmd.none )
 
 
 authStatusToSession : Auth.Status -> Session
@@ -236,7 +241,26 @@ card imageUrl title cardBody controls devices =
             , sm [ Cards.src imageUrl ]
             ]
             []
-            []
+            [ styled div
+                [ Css.position Css.relative
+                , Css.height <| Css.pct 100
+                ]
+                []
+                [ Buttons.button
+                    [ sm
+                        [ Styles.styles
+                            [ Css.position Css.absolute
+                            , Css.bottom <| Css.em -3.5
+                            , Css.right <| Css.em 2
+                            , Css.backgroundColor <| Css.rgb 160 220 180
+                            ]
+                        ]
+                    ]
+                    [ onClick ToggleGrid ]
+                    [ text "Grid" ]
+                    devices
+                ]
+            ]
         , Cards.title title
         , Cards.body cardBody
         , Cards.controls controls
