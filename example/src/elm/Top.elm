@@ -6,7 +6,7 @@ import Main exposing (Model, Msg, init, update, view)
 
 main : Program () Model Msg
 main =
-    Browser.element
+    Browser.document
         { init = init
         , update = update
         , subscriptions = \_ -> Sub.none

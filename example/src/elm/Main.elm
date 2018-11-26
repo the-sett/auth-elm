@@ -7,11 +7,12 @@ module Main exposing (init, update, view, Model, Msg)
 -}
 
 import Auth
+import Browser
 import Config exposing (config)
 import Css
 import Css.Global
 import Grid
-import Html.Styled exposing (div, h4, img, input, span, styled, text, toUnstyled)
+import Html.Styled exposing (div, form, h4, img, input, label, span, styled, text, toUnstyled)
 import Html.Styled.Attributes exposing (for, id, name, src)
 import Responsive
 import Styles exposing (lg, md, sm, xl)
@@ -125,13 +126,6 @@ paperWhite =
     Css.rgb 248 248 248
 
 
-{-| Top level view function.
--}
-view model =
-    styledView model
-        |> toUnstyled
-
-
 global : List Css.Global.Snippet
 global =
     [ Css.Global.each
@@ -139,11 +133,42 @@ global =
         [ Css.height <| Css.pct 100
         , Css.backgroundColor <| warmMidGrey
         ]
+    , Css.Global.typeSelector "input:focus"
+        [ Css.Global.generalSiblings
+            [ Css.Global.typeSelector "span:before"
+                [ Css.width <| Css.pct 50
+                ]
+            ]
+        ]
+    , Css.Global.typeSelector "input:focus"
+        [ Css.Global.generalSiblings
+            [ Css.Global.typeSelector "span:after"
+                [ Css.width <| Css.pct 50
+                ]
+            ]
+        ]
+
+    -- input:focus ~ .bar:before,
+    -- input:focus ~ .bar:after
     ]
 
 
-styledView : Model -> Html.Styled.Html Msg
-styledView model =
+{-| Top level view function.
+-}
+view : Model -> Browser.Document Msg
+view model =
+    { title = "Tea Tree Example"
+    , body = [ body model ]
+    }
+
+
+body model =
+    styledBody model
+        |> toUnstyled
+
+
+styledBody : Model -> Html.Styled.Html Msg
+styledBody model =
     let
         innerView =
             [ responsiveMeta
@@ -176,7 +201,7 @@ styledView model =
             div [] innerView
 
 
-card imageUrl title body controls devices =
+card imageUrl title cardBody controls devices =
     Cards.card
         [ sm
             [ Styles.styles
@@ -201,7 +226,7 @@ card imageUrl title body controls devices =
             []
             []
         , Cards.title title
-        , Cards.body body
+        , Cards.body cardBody
         , Cards.controls controls
         ]
         devices
@@ -256,25 +281,7 @@ loginView model =
                     []
                     [ card "images/data_center-large.png"
                         "Log In"
-                        [ styled div
-                            []
-                            []
-                            [ styled Html.Styled.input
-                                [ Css.border <| Css.px 0
-                                , Css.borderBottom3 (Css.px 1) Css.solid (Css.rgba 0 0 0 0.125)
-                                , Css.outline Css.none
-                                ]
-                                [ id "username", name "username" ]
-                                []
-                            , styled Html.Styled.label
-                                []
-                                [ for "username" ]
-                                [ text "Username" ]
-                            ]
-                        , Html.Styled.br [] []
-                        , Html.Styled.br [] []
-                        , Html.Styled.input [ id "password" ] []
-                        , Html.Styled.label [ for "password" ] [ text "Password" ]
+                        [ loginForm
                         ]
                         [ Buttons.button [] [] [ text "Log In" ] devices
                         ]
@@ -283,6 +290,82 @@ loginView model =
                 ]
             ]
             devices
+        ]
+
+
+loginForm =
+    form []
+        [ inputAndLabel
+        , inputAndLabel
+        ]
+
+
+inputAndLabel =
+    styled div
+        [ Css.position Css.relative
+        , Css.fontFamilies [ "Helvetica" ]
+        , Responsive.deviceStyles devices
+            (\common device ->
+                [ Css.marginTop <| Responsive.rhythmPx 1 common device
+                , Css.paddingBottom <| Responsive.rhythmPx 1 common device
+                , Css.height <| Responsive.rhythmPx 1 common device
+                ]
+            )
+        ]
+        []
+        [ styled label
+            [ Css.position Css.absolute
+            , Css.color <| Css.hex "999"
+            , Css.left <| Css.px 0
+            , Css.top <| Css.px 0
+            , Css.property "transition" "all 0.2s ease"
+            , Css.pointerEvents Css.none
+
+            --
+            , Css.top <| Css.px -26
+            , Css.transform <| Css.scale 0.75
+            , Css.left <| Css.px 0
+            , Css.color <| Css.hex "4CAF50"
+            ]
+            [ for "username" ]
+            [ text "Username" ]
+        , styled input
+            [ Css.border <| Css.px 0
+            , Css.borderBottom3 (Css.px 1) Css.solid (Css.hex "666")
+            , Css.display Css.block
+            , Css.focus [ Css.outline Css.none ]
+            , Css.backgroundColor Css.transparent
+            , Css.width <| Css.pct 100
+            ]
+            [ id "username", name "username" ]
+            []
+        , styled span
+            [ Css.position Css.relative
+            , Css.display Css.block
+            , Css.width <| Css.pct 100
+            , Css.before
+                [ Css.property "content" "''"
+                , Css.height <| Css.px 2
+                , Css.width <| Css.px 0
+                , Css.bottom <| Css.px 0
+                , Css.position Css.absolute
+                , Css.backgroundColor <| Css.hex "4CAF50"
+                , Css.property "transition" "all 0.2s ease"
+                , Css.left <| Css.pct 50
+                ]
+            , Css.after
+                [ Css.property "content" "''"
+                , Css.height <| Css.px 2
+                , Css.width <| Css.px 0
+                , Css.bottom <| Css.px 0
+                , Css.position Css.absolute
+                , Css.backgroundColor <| Css.hex "4CAF50"
+                , Css.property "transition" "all 0.2s ease"
+                , Css.right <| Css.pct 50
+                ]
+            ]
+            []
+            []
         ]
 
 
