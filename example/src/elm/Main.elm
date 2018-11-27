@@ -265,40 +265,7 @@ card imageUrl title cardBody controls devices =
         devices
 
 
-initialView : Html.Styled.Html Msg
-initialView =
-    styled div
-        [ Css.marginTop <| Css.vh 10
-        ]
-        []
-        [ Grid.grid
-            [ sm [ Grid.columns 12 ] ]
-            []
-            [ Grid.row
-                [ sm [ Grid.center ] ]
-                []
-                [ Grid.col
-                    []
-                    []
-                    [ card "images/data_center-large.png"
-                        "Attempting to Restore"
-                        [ text "Attempting to restore authentication using a local refresh token." ]
-                        []
-                        devices
-                    ]
-                ]
-            ]
-            devices
-        ]
-
-
-loginView :
-    { a
-        | username : String
-        , password : String
-    }
-    -> Html.Styled.Html Msg
-loginView model =
+framing innerHtml =
     styled div
         [ Responsive.deviceStyle devices
             (\common device -> Css.marginTop <| Responsive.rhythmPx 3 common device)
@@ -313,18 +280,38 @@ loginView model =
                 [ Grid.col
                     []
                     []
-                    [ card "images/data_center-large.png"
-                        "Log In"
-                        [ loginForm
-                        ]
-                        [ Buttons.button [] [] [ text "Log In" ] devices
-                        ]
-                        devices
-                    ]
+                    [ innerHtml ]
                 ]
             ]
             devices
         ]
+
+
+initialView : Html.Styled.Html Msg
+initialView =
+    framing <|
+        card "images/data_center-large.png"
+            "Attempting to Restore"
+            [ text "Attempting to restore authentication using a local refresh token." ]
+            []
+            devices
+
+
+loginView :
+    { a
+        | username : String
+        , password : String
+    }
+    -> Html.Styled.Html Msg
+loginView model =
+    framing <|
+        card "images/data_center-large.png"
+            "Log In"
+            [ loginForm
+            ]
+            [ Buttons.button [] [] [ text "Log In" ] devices
+            ]
+            devices
 
 
 loginForm =
@@ -410,31 +397,14 @@ notPermittedView :
     }
     -> Html.Styled.Html Msg
 notPermittedView model =
-    styled div
-        [ Css.marginTop <| Css.vh 10
-        ]
-        []
-        [ Grid.grid
-            [ sm [ Grid.columns 12 ] ]
-            []
-            [ Grid.row
-                [ sm [ Grid.center ] ]
-                []
-                [ Grid.col
-                    []
-                    []
-                    [ card "images/data_center-large.png"
-                        "Not Authorized"
-                        [ text "Username"
-                        , text "Password"
-                        ]
-                        [ Buttons.button [] [] [ text "Try Again" ] devices ]
-                        devices
-                    ]
-                ]
+    framing <|
+        card "images/data_center-large.png"
+            "Not Authorized"
+            [ text "Username"
+            , text "Password"
             ]
+            [ Buttons.button [] [] [ text "Try Again" ] devices ]
             devices
-        ]
 
 
 authenticatedView :
@@ -442,64 +412,32 @@ authenticatedView :
     -> { scopes : List String, subject : String }
     -> Html.Styled.Html Msg
 authenticatedView model user =
-    -- div []
-    --     [ div [ class "layout-fixed-width--one-card" ]
-    --         [ ViewUtils.rhythm1SpacerDiv
-    --         , div [ class "mdl-grid" ]
-    --             [ div [ class "mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp" ]
-    --                 [ div [ class "mdl-card__media" ]
-    --                     [ img [ src "images/data_center-large.png" ]
-    --                         []
-    --                     ]
-    --                 , div [ class "mdl-card__title" ]
-    --                     [ h4 [ class "mdl-card__title-text" ]
-    --                         [ text "Authenticated" ]
-    --                     ]
-    --                 , div [ class "mdl-card__supporting-text" ]
-    --                     [ Lists.ul []
-    --                         [ Lists.li [ Lists.withBody ]
-    --                             -- NB! Required on every Lists.li containing body.
-    --                             [ Lists.content []
-    --                                 [ text "Logged In As"
-    --                                 , Lists.body [] [ text model.username ]
-    --                                 ]
-    --                             ]
-    --                         , Lists.li [ Lists.withBody ]
-    --                             [ Lists.content []
-    --                                 [ text "With Id"
-    --                                 , Lists.body [] [ text user.subject ]
-    --                                 ]
-    --                             ]
-    --                         , Lists.li [ Lists.withBody ]
-    --                             [ Lists.content []
-    --                                 [ text "With Permissions"
-    --                                 , Lists.body [] <| permissionsToChips user.scopes
-    --                                 ]
-    --                             ]
-    --                         ]
-    --                     ]
-    --                 , div [ class "mdl-card__actions" ]
-    --                     [ div [ class "control-bar" ]
-    --                         [ div [ class "control-bar__row" ]
-    --                             [ div [ class "control-bar__left-0" ]
-    --                                 [ Button.render Mdl
-    --                                     [ 2, 1 ]
-    --                                     model.mdl
-    --                                     [ Button.colored
-    --                                     , Options.onClick TryAgain
-    --                                     ]
-    --                                     [ Icon.i "chevron_left"
-    --                                     , text "Log Out"
-    --                                     ]
-    --                                 ]
-    --                             ]
-    --                         ]
-    --                     ]
-    --                 ]
-    --             ]
-    --         ]
-    --     ]
-    div [] []
+    framing <|
+        card "images/data_center-large.png"
+            "Authenticated"
+            [-- Lists.ul []
+             --     [ Lists.li [ Lists.withBody ]
+             --         [ Lists.content []
+             --             [ text "Logged In As"
+             --             , Lists.body [] [ text model.username ]
+             --             ]
+             --         ]
+             --     , Lists.li [ Lists.withBody ]
+             --         [ Lists.content []
+             --             [ text "With Id"
+             --             , Lists.body [] [ text user.subject ]
+             --             ]
+             --         ]
+             --     , Lists.li [ Lists.withBody ]
+             --         [ Lists.content []
+             --             [ text "With Permissions"
+             --             , Lists.body [] <| permissionsToChips user.scopes
+             --             ]
+             --         ]
+             --     ]
+            ]
+            [ Buttons.button [] [] [ text "Try Again" ] devices ]
+            devices
 
 
 permissionsToChips : List String -> List (Html.Styled.Html Msg)
