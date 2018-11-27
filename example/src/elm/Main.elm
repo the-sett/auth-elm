@@ -164,9 +164,6 @@ global =
                 ]
             ]
         ]
-
-    -- input:focus ~ .bar:before,
-    -- input:focus ~ .bar:after
     ]
 
 
@@ -174,7 +171,7 @@ global =
 -}
 view : Model -> Browser.Document Msg
 view model =
-    { title = "Tea Tree Example"
+    { title = "Auth Elm Example"
     , body = [ body model ]
     }
 
