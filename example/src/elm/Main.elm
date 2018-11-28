@@ -24,6 +24,7 @@ import TheSett.Buttons as Buttons
 import TheSett.Cards as Cards
 import TheSett.Debug
 import TheSett.Laf as Laf exposing (devices, fonts, responsiveMeta, wrapper)
+import TheSett.TextField as TextField
 import Update3
 import UpdateUtils exposing (lift)
 import ViewUtils
@@ -152,7 +153,6 @@ global =
             )
         ]
     ]
-        ++ inputGlobal
 
 
 {-| Top level view function.
@@ -221,17 +221,21 @@ loginView model =
         [ card "images/data_center-large.png"
             "Log In"
             [ form []
-                [ input [ 1 ]
+                [ TextField.textField [ 1 ]
+                    []
                     [ onInput UpdateUsername
                     , Html.Styled.Attributes.value model.username
                     ]
                     [ text "Username" ]
-                , input [ 2 ]
+                    devices
+                , TextField.textField [ 2 ]
+                    []
                     [ onInput UpdatePassword
                     , Html.Styled.Attributes.type_ "password"
                     , Html.Styled.Attributes.value model.password
                     ]
                     [ text "Password" ]
+                    devices
                 ]
             ]
             [ Buttons.button [] [ onClick LogIn ] [ text "Log In" ] devices
@@ -246,17 +250,21 @@ notPermittedView model =
         [ card "images/data_center-large.png"
             "Not Authorized"
             [ form []
-                [ input [ 1 ]
+                [ TextField.textField [ 1 ]
+                    []
                     [ onInput UpdateUsername
                     , Html.Styled.Attributes.value model.username
                     ]
                     [ text "Username" ]
-                , input [ 2 ]
+                    devices
+                , TextField.textField [ 2 ]
+                    []
                     [ onInput UpdatePassword
                     , Html.Styled.Attributes.type_ "password"
                     , Html.Styled.Attributes.value model.password
                     ]
                     [ text "Password" ]
+                    devices
                 ]
             ]
             [ Buttons.button [] [ onClick TryAgain ] [ text "Try Again" ] devices ]
@@ -384,104 +392,3 @@ permissionsToChips permissions =
     --     )
     --     permissions
     []
-
-
-
--- UI Components
-
-
-input : List Int -> List (Html.Styled.Attribute msg) -> List (Html.Styled.Html msg) -> Html.Styled.Html msg
-input idPath attrs innerHtml =
-    let
-        id =
-            pathToId idPath
-    in
-    styled div
-        [ Css.position Css.relative
-        , Css.fontFamilies [ "Helvetica" ]
-        , Responsive.deviceStyles devices
-            (\device ->
-                [ Css.marginTop <| Responsive.rhythmPx 1 device
-                , Css.paddingBottom <| Responsive.rhythmPx 1 device
-                , Css.height <| Responsive.rhythmPx 1 device
-                ]
-            )
-        ]
-        []
-        [ styled label
-            [ Css.position Css.absolute
-            , Css.color <| Css.hex "999"
-            , Css.left <| Css.px 0
-            , Css.top <| Css.px 0
-            , Css.property "transition" "all 0.2s ease"
-            , Css.pointerEvents Css.none
-
-            --
-            , Css.top <| Css.px -26
-            , Css.transform <| Css.scale 0.75
-            , Css.left <| Css.px 0
-            , Css.color <| Css.hex "4CAF50"
-            ]
-            [ for id ]
-            innerHtml
-        , styled Html.Styled.input
-            [ Css.border <| Css.px 0
-            , Css.borderBottom3 (Css.px 1) Css.solid (Css.hex "666")
-            , Css.display Css.block
-            , Css.focus [ Css.outline Css.none ]
-            , Css.backgroundColor Css.transparent
-            , Css.width <| Css.pct 100
-            ]
-            ([ Html.Styled.Attributes.id id, name id ] ++ attrs)
-            []
-        , styled span
-            [ Css.position Css.relative
-            , Css.display Css.block
-            , Css.width <| Css.pct 100
-            , Css.before
-                [ Css.property "content" "''"
-                , Css.height <| Css.px 2
-                , Css.width <| Css.px 0
-                , Css.bottom <| Css.px 0
-                , Css.position Css.absolute
-                , Css.backgroundColor <| Css.hex "4CAF50"
-                , Css.property "transition" "all 0.2s ease"
-                , Css.left <| Css.pct 50
-                ]
-            , Css.after
-                [ Css.property "content" "''"
-                , Css.height <| Css.px 2
-                , Css.width <| Css.px 0
-                , Css.bottom <| Css.px 0
-                , Css.position Css.absolute
-                , Css.backgroundColor <| Css.hex "4CAF50"
-                , Css.property "transition" "all 0.2s ease"
-                , Css.right <| Css.pct 50
-                ]
-            ]
-            []
-            []
-        ]
-
-
-pathToId path =
-    List.map String.fromInt path
-        |> String.join "-"
-
-
-inputGlobal =
-    [ Css.Global.typeSelector "input:focus"
-        [ Css.Global.generalSiblings
-            [ Css.Global.typeSelector "span:before"
-                [ Css.width <| Css.pct 50
-                ]
-            ]
-        ]
-    , Css.Global.typeSelector "input:focus"
-        [ Css.Global.generalSiblings
-            [ Css.Global.typeSelector "span:after"
-                [ Css.width <| Css.pct 50
-                ]
-            ]
-        ]
-    ]
