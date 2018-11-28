@@ -12,8 +12,9 @@ import Config exposing (config)
 import Css
 import Css.Global
 import Grid
-import Html.Styled exposing (div, form, h4, img, input, label, span, styled, text, toUnstyled)
-import Html.Styled.Attributes exposing (for, id, name, src)
+import Html
+import Html.Styled exposing (div, form, h4, img, label, span, styled, text, toUnstyled)
+import Html.Styled.Attributes exposing (for, name, src)
 import Html.Styled.Events exposing (onClick)
 import Responsive
 import Styles exposing (lg, md, sm, xl)
@@ -123,10 +124,6 @@ authStatusToSession status =
 -- View
 
 
-warmMidGrey =
-    Css.rgb 214 212 214
-
-
 paperWhite =
     Css.rgb 248 248 248
 
@@ -136,8 +133,6 @@ global =
     [ Css.Global.each
         [ Css.Global.html ]
         [ Css.height <| Css.pct 100
-
-        --, Css.backgroundColor <| warmMidGrey
         , Responsive.deviceStyle devices
             (\common device ->
                 let
@@ -150,21 +145,8 @@ global =
                         ++ "px, rgb(225, 212, 214) 0px, rgb(208, 212, 214) 100%)"
             )
         ]
-    , Css.Global.typeSelector "input:focus"
-        [ Css.Global.generalSiblings
-            [ Css.Global.typeSelector "span:before"
-                [ Css.width <| Css.pct 50
-                ]
-            ]
-        ]
-    , Css.Global.typeSelector "input:focus"
-        [ Css.Global.generalSiblings
-            [ Css.Global.typeSelector "span:after"
-                [ Css.width <| Css.pct 50
-                ]
-            ]
-        ]
     ]
+        ++ inputGlobal
 
 
 {-| Top level view function.
@@ -176,6 +158,7 @@ view model =
     }
 
 
+body : Model -> Html.Html Msg
 body model =
     styledBody model
         |> toUnstyled
@@ -215,6 +198,107 @@ styledBody model =
             div [] innerView
 
 
+initialView : Html.Styled.Html Msg
+initialView =
+    framing <|
+        [ card "images/data_center-large.png"
+            "Attempting to Restore"
+            [ text "Attempting to restore authentication using a local refresh token." ]
+            []
+            devices
+        ]
+
+
+loginView : { a | username : String, password : String } -> Html.Styled.Html Msg
+loginView model =
+    framing <|
+        [ card "images/data_center-large.png"
+            "Log In"
+            [ form []
+                [ input "1" [] [ text "Username" ]
+                , input "2" [ Html.Styled.Attributes.type_ "password" ] [ text "Password" ]
+                ]
+            ]
+            [ Buttons.button [] [] [ text "Log In" ] devices
+            ]
+            devices
+        ]
+
+
+notPermittedView : { a | username : String, password : String } -> Html.Styled.Html Msg
+notPermittedView model =
+    framing <|
+        [ card "images/data_center-large.png"
+            "Not Authorized"
+            [ text "Username"
+            , text "Password"
+            ]
+            [ Buttons.button [] [] [ text "Try Again" ] devices ]
+            devices
+        ]
+
+
+authenticatedView : { a | username : String } -> { scopes : List String, subject : String } -> Html.Styled.Html Msg
+authenticatedView model user =
+    framing <|
+        [ card "images/data_center-large.png"
+            "Authenticated"
+            [-- Lists.ul []
+             --     [ Lists.li [ Lists.withBody ]
+             --         [ Lists.content []
+             --             [ text "Logged In As"
+             --             , Lists.body [] [ text model.username ]
+             --             ]
+             --         ]
+             --     , Lists.li [ Lists.withBody ]
+             --         [ Lists.content []
+             --             [ text "With Id"
+             --             , Lists.body [] [ text user.subject ]
+             --             ]
+             --         ]
+             --     , Lists.li [ Lists.withBody ]
+             --         [ Lists.content []
+             --             [ text "With Permissions"
+             --             , Lists.body [] <| permissionsToChips user.scopes
+             --             ]
+             --         ]
+             --     ]
+            ]
+            [ Buttons.button [] [] [ text "Try Again" ] devices ]
+            devices
+        ]
+
+
+framing : List (Html.Styled.Html Msg) -> Html.Styled.Html Msg
+framing innerHtml =
+    styled div
+        [ Responsive.deviceStyle devices
+            (\common device -> Css.marginTop <| Responsive.rhythmPx 3 common device)
+        ]
+        []
+        [ Grid.grid
+            [ sm [ Grid.columns 12 ] ]
+            []
+            [ Grid.row
+                [ sm [ Grid.center ] ]
+                []
+                [ Grid.col
+                    []
+                    []
+                    innerHtml
+                ]
+            ]
+            devices
+        ]
+
+
+card :
+    String
+    -> String
+    -> List (Html.Styled.Html Msg)
+    -> List (Html.Styled.Html Msg)
+    -> Responsive.ResponsiveStyle
+    -> Html.Styled.Html Msg
 card imageUrl title cardBody controls devices =
     Cards.card
         [ sm
@@ -265,63 +349,23 @@ card imageUrl title cardBody controls devices =
         devices
 
 
-framing innerHtml =
-    styled div
-        [ Responsive.deviceStyle devices
-            (\common device -> Css.marginTop <| Responsive.rhythmPx 3 common device)
-        ]
-        []
-        [ Grid.grid
-            [ sm [ Grid.columns 12 ] ]
-            []
-            [ Grid.row
-                [ sm [ Grid.center ] ]
-                []
-                [ Grid.col
-                    []
-                    []
-                    [ innerHtml ]
-                ]
-            ]
-            devices
-        ]
+permissionsToChips : List String -> List (Html.Styled.Html Msg)
+permissionsToChips permissions =
+    -- List.map
+    --     (\permission ->
+    --         span [ class "mdl-chip mdl-chip__text" ]
+    --             [ text permission ]
+    --     )
+    --     permissions
+    []
 
 
-initialView : Html.Styled.Html Msg
-initialView =
-    framing <|
-        card "images/data_center-large.png"
-            "Attempting to Restore"
-            [ text "Attempting to restore authentication using a local refresh token." ]
-            []
-            devices
+
+-- UI Components
 
 
-loginView :
-    { a
-        | username : String
-        , password : String
-    }
-    -> Html.Styled.Html Msg
-loginView model =
-    framing <|
-        card "images/data_center-large.png"
-            "Log In"
-            [ loginForm
-            ]
-            [ Buttons.button [] [] [ text "Log In" ] devices
-            ]
-            devices
-
-
-loginForm =
-    form []
-        [ inputAndLabel
-        , inputAndLabel
-        ]
-
-
-inputAndLabel =
+input : String -> List (Html.Styled.Attribute msg) -> List (Html.Styled.Html msg) -> Html.Styled.Html msg
+input id attrs innerHtml =
     styled div
         [ Css.position Css.relative
         , Css.fontFamilies [ "Helvetica" ]
@@ -348,9 +392,9 @@ inputAndLabel =
             , Css.left <| Css.px 0
             , Css.color <| Css.hex "4CAF50"
             ]
-            [ for "username" ]
-            [ text "Username" ]
-        , styled input
+            [ for id ]
+            innerHtml
+        , styled Html.Styled.input
             [ Css.border <| Css.px 0
             , Css.borderBottom3 (Css.px 1) Css.solid (Css.hex "666")
             , Css.display Css.block
@@ -358,7 +402,7 @@ inputAndLabel =
             , Css.backgroundColor Css.transparent
             , Css.width <| Css.pct 100
             ]
-            [ id "username", name "username" ]
+            ([ Html.Styled.Attributes.id id, name id ] ++ attrs)
             []
         , styled span
             [ Css.position Css.relative
@@ -390,62 +434,19 @@ inputAndLabel =
         ]
 
 
-notPermittedView :
-    { a
-        | username : String
-        , password : String
-    }
-    -> Html.Styled.Html Msg
-notPermittedView model =
-    framing <|
-        card "images/data_center-large.png"
-            "Not Authorized"
-            [ text "Username"
-            , text "Password"
+inputGlobal =
+    [ Css.Global.typeSelector "input:focus"
+        [ Css.Global.generalSiblings
+            [ Css.Global.typeSelector "span:before"
+                [ Css.width <| Css.pct 50
+                ]
             ]
-            [ Buttons.button [] [] [ text "Try Again" ] devices ]
-            devices
-
-
-authenticatedView :
-    { a | username : String }
-    -> { scopes : List String, subject : String }
-    -> Html.Styled.Html Msg
-authenticatedView model user =
-    framing <|
-        card "images/data_center-large.png"
-            "Authenticated"
-            [-- Lists.ul []
-             --     [ Lists.li [ Lists.withBody ]
-             --         [ Lists.content []
-             --             [ text "Logged In As"
-             --             , Lists.body [] [ text model.username ]
-             --             ]
-             --         ]
-             --     , Lists.li [ Lists.withBody ]
-             --         [ Lists.content []
-             --             [ text "With Id"
-             --             , Lists.body [] [ text user.subject ]
-             --             ]
-             --         ]
-             --     , Lists.li [ Lists.withBody ]
-             --         [ Lists.content []
-             --             [ text "With Permissions"
-             --             , Lists.body [] <| permissionsToChips user.scopes
-             --             ]
-             --         ]
-             --     ]
+        ]
+    , Css.Global.typeSelector "input:focus"
+        [ Css.Global.generalSiblings
+            [ Css.Global.typeSelector "span:after"
+                [ Css.width <| Css.pct 50
+                ]
             ]
-            [ Buttons.button [] [] [ text "Try Again" ] devices ]
-            devices
-
-
-permissionsToChips : List String -> List (Html.Styled.Html Msg)
-permissionsToChips permissions =
-    -- List.map
-    --     (\permission ->
-    --         span [ class "mdl-chip mdl-chip__text" ]
-    --             [ text permission ]
-    --     )
-    --     permissions
-    []
+        ]
+    ]
