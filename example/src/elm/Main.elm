@@ -140,10 +140,10 @@ global =
         [ Css.Global.html ]
         [ Css.height <| Css.pct 100
         , Responsive.deviceStyle devices
-            (\common device ->
+            (\device ->
                 let
                     headerPx =
-                        Responsive.rhythm 9.5 common device
+                        Responsive.rhythm 9.5 device
                 in
                 Css.property "background" <|
                     "linear-gradient(rgb(120, 116, 120) 0%, "
@@ -221,12 +221,12 @@ loginView model =
         [ card "images/data_center-large.png"
             "Log In"
             [ form []
-                [ input "1"
+                [ input [ 1 ]
                     [ onInput UpdateUsername
                     , Html.Styled.Attributes.value model.username
                     ]
                     [ text "Username" ]
-                , input "2"
+                , input [ 2 ]
                     [ onInput UpdatePassword
                     , Html.Styled.Attributes.type_ "password"
                     , Html.Styled.Attributes.value model.password
@@ -246,12 +246,12 @@ notPermittedView model =
         [ card "images/data_center-large.png"
             "Not Authorized"
             [ form []
-                [ input "1"
+                [ input [ 1 ]
                     [ onInput UpdateUsername
                     , Html.Styled.Attributes.value model.username
                     ]
                     [ text "Username" ]
-                , input "2"
+                , input [ 2 ]
                     [ onInput UpdatePassword
                     , Html.Styled.Attributes.type_ "password"
                     , Html.Styled.Attributes.value model.password
@@ -299,7 +299,7 @@ framing : List (Html.Styled.Html Msg) -> Html.Styled.Html Msg
 framing innerHtml =
     styled div
         [ Responsive.deviceStyle devices
-            (\common device -> Css.marginTop <| Responsive.rhythmPx 3 common device)
+            (\device -> Css.marginTop <| Responsive.rhythmPx 3 device)
         ]
         []
         [ Grid.grid
@@ -390,16 +390,20 @@ permissionsToChips permissions =
 -- UI Components
 
 
-input : String -> List (Html.Styled.Attribute msg) -> List (Html.Styled.Html msg) -> Html.Styled.Html msg
-input id attrs innerHtml =
+input : List Int -> List (Html.Styled.Attribute msg) -> List (Html.Styled.Html msg) -> Html.Styled.Html msg
+input idPath attrs innerHtml =
+    let
+        id =
+            pathToId idPath
+    in
     styled div
         [ Css.position Css.relative
         , Css.fontFamilies [ "Helvetica" ]
         , Responsive.deviceStyles devices
-            (\common device ->
-                [ Css.marginTop <| Responsive.rhythmPx 1 common device
-                , Css.paddingBottom <| Responsive.rhythmPx 1 common device
-                , Css.height <| Responsive.rhythmPx 1 common device
+            (\device ->
+                [ Css.marginTop <| Responsive.rhythmPx 1 device
+                , Css.paddingBottom <| Responsive.rhythmPx 1 device
+                , Css.height <| Responsive.rhythmPx 1 device
                 ]
             )
         ]
@@ -458,6 +462,11 @@ input id attrs innerHtml =
             []
             []
         ]
+
+
+pathToId path =
+    List.map String.fromInt path
+        |> String.join "-"
 
 
 inputGlobal =
