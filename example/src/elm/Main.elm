@@ -15,7 +15,7 @@ import Grid
 import Html
 import Html.Styled exposing (div, form, h4, img, label, span, styled, text, toUnstyled)
 import Html.Styled.Attributes exposing (for, name, src)
-import Html.Styled.Events exposing (onClick)
+import Html.Styled.Events exposing (onClick, onInput)
 import Responsive
 import Styles exposing (lg, md, sm, xl)
 import TheSett.Buttons as Buttons
@@ -86,7 +86,7 @@ init _ =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
-    case action of
+    case Debug.log "msg" action of
         AuthMsg msg ->
             Update3.lift .auth (\x m -> { m | auth = x }) AuthMsg Auth.update msg model
                 |> Update3.evalMaybe (\status -> \nextModel -> ( { nextModel | session = authStatusToSession status }, Cmd.none )) Cmd.none
@@ -215,11 +215,20 @@ loginView model =
         [ card "images/data_center-large.png"
             "Log In"
             [ form []
-                [ input "1" [] [ text "Username" ]
-                , input "2" [ Html.Styled.Attributes.type_ "password" ] [ text "Password" ]
+                [ input "1"
+                    [ onInput UpdateUsername
+                    , Html.Styled.Attributes.value model.username
+                    ]
+                    [ text "Username" ]
+                , input "2"
+                    [ onInput UpdatePassword
+                    , Html.Styled.Attributes.type_ "password"
+                    , Html.Styled.Attributes.value model.password
+                    ]
+                    [ text "Password" ]
                 ]
             ]
-            [ Buttons.button [] [] [ text "Log In" ] devices
+            [ Buttons.button [] [ onClick LogIn ] [ text "Log In" ] devices
             ]
             devices
         ]
@@ -230,10 +239,21 @@ notPermittedView model =
     framing <|
         [ card "images/data_center-large.png"
             "Not Authorized"
-            [ text "Username"
-            , text "Password"
+            [ form []
+                [ input "1"
+                    [ onInput UpdateUsername
+                    , Html.Styled.Attributes.value model.username
+                    ]
+                    [ text "Username" ]
+                , input "2"
+                    [ onInput UpdatePassword
+                    , Html.Styled.Attributes.type_ "password"
+                    , Html.Styled.Attributes.value model.password
+                    ]
+                    [ text "Password" ]
+                ]
             ]
-            [ Buttons.button [] [] [ text "Try Again" ] devices ]
+            [ Buttons.button [] [ onClick TryAgain ] [ text "Try Again" ] devices ]
             devices
         ]
 
