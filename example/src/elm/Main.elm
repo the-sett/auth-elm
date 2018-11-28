@@ -16,8 +16,10 @@ import Html
 import Html.Styled exposing (div, form, h4, img, label, span, styled, text, toUnstyled)
 import Html.Styled.Attributes exposing (for, name, src)
 import Html.Styled.Events exposing (onClick, onInput)
+import Process
 import Responsive
 import Styles exposing (lg, md, sm, xl)
+import Task
 import TheSett.Buttons as Buttons
 import TheSett.Cards as Cards
 import TheSett.Debug
@@ -52,6 +54,7 @@ type Session
 -}
 type Msg
     = AuthMsg Auth.Msg
+    | InitialTimeout
     | LogIn
     | TryAgain
     | UpdateUsername String
@@ -80,7 +83,7 @@ init _ =
       , password = ""
       , debugStyle = False
       }
-    , Auth.refresh |> Cmd.map AuthMsg
+    , Process.sleep 1000 |> Task.perform (always InitialTimeout)
     )
 
 
@@ -90,6 +93,9 @@ update action model =
         AuthMsg msg ->
             Update3.lift .auth (\x m -> { m | auth = x }) AuthMsg Auth.update msg model
                 |> Update3.evalMaybe (\status -> \nextModel -> ( { nextModel | session = authStatusToSession status }, Cmd.none )) Cmd.none
+
+        InitialTimeout ->
+            ( model, Auth.refresh |> Cmd.map AuthMsg )
 
         LogIn ->
             ( model, Auth.login { username = model.username, password = model.password } |> Cmd.map AuthMsg )
@@ -284,7 +290,7 @@ authenticatedView model user =
              --         ]
              --     ]
             ]
-            [ Buttons.button [] [] [ text "Try Again" ] devices ]
+            [ Buttons.button [] [ onClick TryAgain ] [ text "Try Again" ] devices ]
             devices
         ]
 
