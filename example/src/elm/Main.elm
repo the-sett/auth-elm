@@ -24,7 +24,7 @@ import TheSett.Buttons as Buttons
 import TheSett.Cards as Cards
 import TheSett.Debug
 import TheSett.Laf as Laf exposing (devices, fonts, responsiveMeta, wrapper)
-import TheSett.TextField as TextField
+import TheSett.Textfield as Textfield
 import Update3
 import UpdateUtils exposing (lift)
 import ViewUtils
@@ -33,7 +33,8 @@ import ViewUtils
 {-| The content editor program model.
 -}
 type alias Model =
-    { auth : Auth.Model
+    { laf : Laf.Model
+    , auth : Auth.Model
     , session : Session
     , username : String
     , password : String
@@ -54,7 +55,8 @@ type Session
 {-| The content editor program top-level message types.
 -}
 type Msg
-    = AuthMsg Auth.Msg
+    = LafMsg Laf.Msg
+    | AuthMsg Auth.Msg
     | InitialTimeout
     | LogIn
     | TryAgain
@@ -75,7 +77,8 @@ from a refresh token held as a cookie, without needing the user to log in.
 -}
 init : flags -> ( Model, Cmd Msg )
 init _ =
-    ( { auth =
+    ( { laf = Laf.init
+      , auth =
             Auth.init
                 { authApiRoot = config.authRoot
                 }
@@ -112,6 +115,9 @@ update action model =
 
         ToggleGrid ->
             ( { model | debugStyle = not model.debugStyle }, Cmd.none )
+
+        LafMsg _ ->
+            ( model, Cmd.none )
 
 
 authStatusToSession : Auth.Status -> Session
@@ -215,20 +221,26 @@ initialView =
         ]
 
 
-loginView : { a | username : String, password : String } -> Html.Styled.Html Msg
+loginView : { a | laf : Laf.Model, username : String, password : String } -> Html.Styled.Html Msg
 loginView model =
     framing <|
         [ card "images/data_center-large.png"
             "Log In"
             [ form []
-                [ TextField.textField [ 1 ]
+                [ Textfield.render
+                    LafMsg
+                    [ 1 ]
+                    model.laf
                     []
                     [ onInput UpdateUsername
                     , Html.Styled.Attributes.value model.username
                     ]
                     [ text "Username" ]
                     devices
-                , TextField.textField [ 2 ]
+                , Textfield.render
+                    LafMsg
+                    [ 2 ]
+                    model.laf
                     []
                     [ onInput UpdatePassword
                     , Html.Styled.Attributes.type_ "password"
@@ -244,20 +256,26 @@ loginView model =
         ]
 
 
-notPermittedView : { a | username : String, password : String } -> Html.Styled.Html Msg
+notPermittedView : { a | laf : Laf.Model, username : String, password : String } -> Html.Styled.Html Msg
 notPermittedView model =
     framing <|
         [ card "images/data_center-large.png"
             "Not Authorized"
             [ form []
-                [ TextField.textField [ 1 ]
+                [ Textfield.render
+                    LafMsg
+                    [ 1 ]
+                    model.laf
                     []
                     [ onInput UpdateUsername
                     , Html.Styled.Attributes.value model.username
                     ]
                     [ text "Username" ]
                     devices
-                , TextField.textField [ 2 ]
+                , Textfield.render
+                    LafMsg
+                    [ 2 ]
+                    model.laf
                     []
                     [ onInput UpdatePassword
                     , Html.Styled.Attributes.type_ "password"
