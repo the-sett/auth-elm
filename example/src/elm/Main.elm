@@ -94,6 +94,10 @@ init _ =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
     case Debug.log "msg" action of
+        LafMsg lafMsg ->
+            Laf.update LafMsg lafMsg model.laf
+                |> Tuple.mapFirst (\laf -> { model | laf = laf })
+
         AuthMsg msg ->
             Update3.lift .auth (\x m -> { m | auth = x }) AuthMsg Auth.update msg model
                 |> Update3.evalMaybe (\status -> \nextModel -> ( { nextModel | session = authStatusToSession status }, Cmd.none )) Cmd.none
@@ -115,9 +119,6 @@ update action model =
 
         ToggleGrid ->
             ( { model | debugStyle = not model.debugStyle }, Cmd.none )
-
-        LafMsg _ ->
-            ( model, Cmd.none )
 
 
 authStatusToSession : Auth.Status -> Session
