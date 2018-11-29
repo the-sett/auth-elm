@@ -228,24 +228,23 @@ loginView model =
         [ card "images/data_center-large.png"
             "Log In"
             [ form []
-                [ Textfield.render
+                [ Textfield.text
                     LafMsg
                     [ 1 ]
                     model.laf
-                    []
+                    [ Textfield.value model.username ]
                     [ onInput UpdateUsername
-                    , Html.Styled.Attributes.value model.username
                     ]
                     [ text "Username" ]
                     devices
-                , Textfield.render
+                , Textfield.text
                     LafMsg
                     [ 2 ]
                     model.laf
-                    []
+                    [ Textfield.disabled
+                    , Textfield.value model.password
+                    ]
                     [ onInput UpdatePassword
-                    , Html.Styled.Attributes.type_ "password"
-                    , Html.Styled.Attributes.value model.password
                     ]
                     [ text "Password" ]
                     devices
@@ -263,24 +262,23 @@ notPermittedView model =
         [ card "images/data_center-large.png"
             "Not Authorized"
             [ form []
-                [ Textfield.render
+                [ Textfield.text
                     LafMsg
                     [ 1 ]
                     model.laf
-                    []
+                    [ Textfield.value model.username ]
                     [ onInput UpdateUsername
-                    , Html.Styled.Attributes.value model.username
                     ]
                     [ text "Username" ]
                     devices
-                , Textfield.render
+                , Textfield.text
                     LafMsg
                     [ 2 ]
                     model.laf
-                    []
+                    [ Textfield.disabled
+                    , Textfield.value model.password
+                    ]
                     [ onInput UpdatePassword
-                    , Html.Styled.Attributes.type_ "password"
-                    , Html.Styled.Attributes.value model.password
                     ]
                     [ text "Password" ]
                     devices
