@@ -3,7 +3,7 @@
     "name": "the-sett/auth-elm",
     "summary": "Elm auth module for interacting with the-sett/auth-service.",
     "license": "BSD-3-Clause",
-    "version": "3.0.2",
+    "version": "3.0.3",
     "exposed-modules": [
         "Auth"
     ],
