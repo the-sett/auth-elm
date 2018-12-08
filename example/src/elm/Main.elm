@@ -294,28 +294,25 @@ authenticatedView model user =
     framing <|
         [ card "images/data_center-large.png"
             "Authenticated"
-            [-- Lists.ul []
-             --     [ Lists.li [ Lists.withBody ]
-             --         [ Lists.content []
-             --             [ text "Logged In As"
-             --             , Lists.body [] [ text model.username ]
-             --             ]
-             --         ]
-             --     , Lists.li [ Lists.withBody ]
-             --         [ Lists.content []
-             --             [ text "With Id"
-             --             , Lists.body [] [ text user.subject ]
-             --             ]
-             --         ]
-             --     , Lists.li [ Lists.withBody ]
-             --         [ Lists.content []
-             --             [ text "With Permissions"
-             --             , Lists.body [] <| permissionsToChips user.scopes
-             --             ]
-             --         ]
-             --     ]
+            [ Html.Styled.ul []
+                [ Html.Styled.li []
+                    [ text "Logged In As:"
+                    , Html.Styled.br [] []
+                    , text model.username
+                    ]
+                , Html.Styled.li []
+                    [ text "With Id:"
+                    , Html.Styled.br [] []
+                    , text user.subject
+                    ]
+                , Html.Styled.li []
+                    (text "With Permissions:"
+                        :: Html.Styled.br [] []
+                        :: permissionsToChips user.scopes
+                    )
+                ]
             ]
-            [ Buttons.button [] [ onClick TryAgain ] [ text "Try Again" ] devices ]
+            [ Buttons.button [] [ onClick TryAgain ] [ text "Log Out" ] devices ]
             devices
         ]
 
@@ -402,10 +399,9 @@ card imageUrl title cardBody controls devices =
 
 permissionsToChips : List String -> List (Html.Styled.Html Msg)
 permissionsToChips permissions =
-    -- List.map
-    --     (\permission ->
-    --         span [ class "mdl-chip mdl-chip__text" ]
-    --             [ text permission ]
-    --     )
-    --     permissions
-    []
+    List.map
+        (\permission ->
+            Html.Styled.span [ Html.Styled.Attributes.class "mdl-chip mdl-chip__text" ]
+                [ text permission ]
+        )
+        permissions
