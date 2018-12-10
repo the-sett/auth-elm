@@ -1,4 +1,3 @@
-require('../assets/styles/roboto.css')
 require('../assets/images/data_center-large.png')
 
 const {
