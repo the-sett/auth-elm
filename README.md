@@ -1,3 +1,6 @@
+**Deprecated**
+See `the-sett/elm-auth` for a newer authentication API with multiple implementations.
+
 # auth-elm
 
 Elm auth module for interacting with the-sett/auth-service.
